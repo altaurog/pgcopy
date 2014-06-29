@@ -38,6 +38,26 @@ For example::
     mgr = CopyManager(conn, 'measurements', cols)
     mgr.copy(records)
 
+Supported datatypes
+-------------------
+
+Currently the following PostgreSQL datatypes are supported:
+
+* integer
+* bool
+* smallint
+* bigint
+* real
+* double precision
+* integer
+* varchar
+* char
+* text
+* bytea
+* timestamp
+* timestamp with time zone
+* date
+
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 .. _psycopg2: http://initd.org/psycopg/
 .. _nose: http://nose.readthedocs.org/

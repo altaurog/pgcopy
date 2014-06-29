@@ -33,7 +33,7 @@ setup(
     install_requires = ["psycopg2"],
     classifiers = [
         "Programming Language :: Python",
-        "Development Status :: 2 - Pre Alpha",
+        "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
