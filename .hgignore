@@ -1,0 +1,8 @@
+syntax:glob
+*.html
+*.pyc
+*.egg-info/*
+
+syntax:regexp
+^dist/
+^django-shoogie-
