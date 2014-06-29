@@ -43,20 +43,19 @@ Supported datatypes
 
 Currently the following PostgreSQL datatypes are supported:
 
-* integer
 * bool
 * smallint
+* integer
 * bigint
 * real
 * double precision
-* integer
-* varchar
 * char
+* varchar
 * text
 * bytea
+* date
 * timestamp
 * timestamp with time zone
-* date
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 .. _psycopg2: http://initd.org/psycopg/
