@@ -18,7 +18,7 @@ Basic use
 
 pgcopy provides facility for copying data from an iterable of tuple-like
 objects using a `CopyManager`, which must be instantiated with a psycopg2
-db connection, the table name and an iterable indicating the names of the
+db connection, the table name, and an iterable indicating the names of the
 columns to be inserted in the order in which they will be provided.
 pgcopy inspects the database to determine the datatypes of the columns.
 
