@@ -38,6 +38,7 @@ maxts = time.mktime(datetime(2038, 1, 1).timetuple())
 class Benchmark(TimerMixin, base.DBTable):
     manager = CopyManager
     method = 'copy'
+    record_count = 100000
     datatypes = [
             'integer',
             'timestamp with time zone',
@@ -50,7 +51,6 @@ class Benchmark(TimerMixin, base.DBTable):
             (manager, 'writestream'),
             (manager, 'copystream'),
             (manager, 'copy'),
-            (manager, 'threading_copy'),
         ]
 
     def generate_data(self, count):
@@ -66,10 +66,20 @@ class Benchmark(TimerMixin, base.DBTable):
         return data
 
     def benchmark(self):
-        data = self.generate_data(100000)
+        data = self.generate_data(self.record_count)
         cols = [base.numname(i) for i in range(len(self.datatypes))]
         mgr = self.manager(self.conn, self.table, cols)
         getattr(mgr, self.method)(data)
+        cursor = self.conn.cursor()
+        query = "SELECT count(*) FROM %s" % self.table
+        cursor.execute(query)
+        assert (cursor.fetchone()[0] == self.record_count)
 
 class ThreadingBenchmark(Benchmark):
     method = 'threading_copy'
+    manager = CopyManager
+    capture = [
+            (manager, 'writestream'),
+            (manager, 'copystream'),
+            (manager, 'threading_copy'),
+        ]
