@@ -2,24 +2,15 @@ import itertools
 from datetime import date, datetime
 from unittest import TestCase
 from pgcopy import CopyManager, util
-from . import get_conn
+from . import base
 
-class TypeMixin(object):
+class TypeMixin(base.DBTable):
     null = 'NOT NULL'
-    def setUp(self):
-        self.conn = get_conn()
-        self.conn.autocommit = False
-        self.cur = self.conn.cursor()
-        self.cur.execute("CREATE TEMPORARY TABLE typetest (id %s %s);"
-                        % (self.datatype, self.null))
-
-    def tearDown(self):
-        self.conn.rollback()
-
     def test_type(self):
-        bincopy = CopyManager(self.conn, 'typetest', ['id'])
+        self.col = base.numname(0)
+        bincopy = CopyManager(self.conn, self.table, [self.col])
         bincopy.copy(self.data)
-        self.cur.execute("SELECT id from typetest")
+        self.cur.execute("SELECT %s from %s" % (self.col, self.table))
         for rec in self.data:
             self.checkValues(rec, self.cur.fetchone())
 
@@ -31,40 +22,40 @@ class TypeMixin(object):
 
 class IntegerTest(TypeMixin, TestCase):
     data = [(1,), (2,)]
-    datatype = 'integer'
+    datatypes = ['integer']
 
 class BoolTest(TypeMixin, TestCase):
     data = [(True,), (False,)]
-    datatype = 'bool'
+    datatypes = ['bool']
 
 class SmallIntTest(TypeMixin, TestCase):
     data = [(1,), (2,)]
-    datatype = 'smallint'
+    datatypes = ['smallint']
 
 class BigIntTest(TypeMixin, TestCase):
     data = [(1,), (2,)]
-    datatype = 'bigint'
+    datatypes = ['bigint']
 
 class RealTest(TypeMixin, TestCase):
     data = [(1.5,), (2.25,)]
-    datatype = 'real'
+    datatypes = ['real']
 
 class DoubleTest(TypeMixin, TestCase):
     data = [(1.5,), (2.25,)]
-    datatype = 'double precision'
+    datatypes = ['double precision']
 
 class NullTest(TypeMixin, TestCase):
     null = 'NULL'
     data = [(1,), (2,), (None,)]
-    datatype = 'integer'
+    datatypes = ['integer']
 
 class VarcharTest(TypeMixin, TestCase):
     data = [('one',), ('three',)]
-    datatype = 'varchar(10)'
+    datatypes = ['varchar(10)']
 
 class CharTest(TypeMixin, TestCase):
     data = [('one',), ('three',)]
-    datatype = 'char(5)'
+    datatypes = ['char(5)']
 
     def cast(self, v):
         self.assertEqual(5, len(v))
@@ -77,14 +68,14 @@ class TextTest(TypeMixin, TestCase):
         ('Python is a programming language that lets you work quickly'
          'and integrate systems more effectively.',),
     ]
-    datatype = 'text'
+    datatypes = ['text']
 
 class ByteaTest(TypeMixin, TestCase):
     data = [
         ('\x02\xf3\x18\x44 alphabet',),
         ('The\x00hippopotamus\x00jumped\x00over\x00the\x00lazy\x00tower',)
     ,]
-    datatype = 'bytea'
+    datatypes = ['bytea']
 
     def cast(self, v):
         self.assertIsInstance(v, buffer)
@@ -92,18 +83,18 @@ class ByteaTest(TypeMixin, TestCase):
 
 class TimestampTest(TypeMixin, TestCase):
     data = [(datetime.now(),), (datetime(1974, 8, 21, 6, 30),) ]
-    datatype = 'timestamp'
+    datatypes = ['timestamp']
 
 class TimestampTZTest(TypeMixin, TestCase):
     data = [
             (util.to_utc(datetime.now()),),
             (util.to_utc(datetime(1974, 8, 21, 6, 30)),)
         ]
-    datatype = 'timestamp with time zone'
+    datatypes = ['timestamp with time zone']
 
     def cast(self, v):
         return util.to_utc(v)
 
 class DateTest(TypeMixin, TestCase):
     data = [(date(2003, 5, 24),), (date.today(),)]
-    datatype = 'date'
+    datatypes = ['date']
