@@ -1,22 +1,10 @@
-import csv
 import psycopg2
-import os
-
-from datetime import datetime
 
 db_state = {
         'test_db': 'pgcopy_test',
         'conn': None,
         'drop': False,
     }
-
-power_consumption = []
-
-def get_file(fname):
-    dirpath = os.path.dirname(__file__)
-    file_path = os.path.join(dirpath, fname)
-    return open(file_path, 'rb')
-
 
 def set_conn(conn):
     db_state['conn'] = conn
