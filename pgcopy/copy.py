@@ -1,7 +1,9 @@
 import calendar
 import itertools
+import os
 import struct
 import sys
+import threading
 
 from cStringIO import StringIO
 from datetime import date
@@ -96,6 +98,16 @@ class CopyManager(object):
         self.writestream(data, datastream)
         datastream.seek(0)
         self.copystream(datastream)
+
+    def threading_copy(self, data):
+        r_fd, w_fd = os.pipe()
+        rstream = os.fdopen(r_fd, 'rb')
+        wstream = os.fdopen(w_fd, 'wb')
+        copy_thread = threading.Thread(target=self.copystream, args=(rstream,))
+        copy_thread.start()
+        self.writestream(data, wstream)
+        wstream.close()
+        copy_thread.join()
 
     def writestream(self, data, datastream):
         datastream.write(BINCOPY_HEADER)

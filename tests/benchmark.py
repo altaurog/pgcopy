@@ -7,9 +7,9 @@ from pgcopy import CopyManager
 from . import base
 
 class TimerMixin(object):
-    times = {}
     def setUp(self):
         super(TimerMixin, self).setUp()
+        self.times = {}
         random.seed()
         for cls, attrname in self.capture:
             self.wrap(cls, attrname)
@@ -28,6 +28,7 @@ class TimerMixin(object):
     def tearDown(self):
         super(TimerMixin, self).tearDown()
         print "-" * 70
+        print "%s execution times:" % self.__class__.__name__
         for name, time in self.times.iteritems():
             print "%30s: %.2fs" % (name, time)
 
@@ -35,6 +36,8 @@ class TimerMixin(object):
 mints = time.mktime(datetime(1970, 1, 1).timetuple())
 maxts = time.mktime(datetime(2038, 1, 1).timetuple())
 class Benchmark(TimerMixin, base.DBTable):
+    manager = CopyManager
+    method = 'copy'
     datatypes = [
             'integer',
             'timestamp with time zone',
@@ -44,8 +47,10 @@ class Benchmark(TimerMixin, base.DBTable):
         ]
 
     capture = [
-            (CopyManager, 'writestream'),
-            (CopyManager, 'copystream'),
+            (manager, 'writestream'),
+            (manager, 'copystream'),
+            (manager, 'copy'),
+            (manager, 'threading_copy'),
         ]
 
     def generate_data(self, count):
@@ -61,7 +66,10 @@ class Benchmark(TimerMixin, base.DBTable):
         return data
 
     def benchmark(self):
-        data = self.generate_data(200000)
+        data = self.generate_data(100000)
         cols = [base.numname(i) for i in range(len(self.datatypes))]
-        mgr = CopyManager(self.conn, self.table, cols)
-        mgr.copy(data)
+        mgr = self.manager(self.conn, self.table, cols)
+        getattr(mgr, self.method)(data)
+
+class ThreadingBenchmark(Benchmark):
+    method = 'threading_copy'
