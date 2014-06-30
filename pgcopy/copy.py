@@ -92,10 +92,6 @@ class CopyManager(object):
             self.formatters.append(f)
 
     def copy(self, data):
-        """
-        http://www.postgresql.org/docs/8.4/static/sql-copy.html#AEN55945
-        http://stackoverflow.com/questions/8144002/#8150329
-        """
         copy_input = StringIO()
         copy_input.write(BINCOPY_HEADER)
         for record in data:
