@@ -92,20 +92,26 @@ class CopyManager(object):
             self.formatters.append(f)
 
     def copy(self, data):
-        copy_input = StringIO()
-        copy_input.write(BINCOPY_HEADER)
+        datastream = StringIO()
+        self.writestream(data, datastream)
+        datastream.seek(0)
+        self.copystream(datastream)
+
+    def writestream(self, data, datastream):
+        datastream.write(BINCOPY_HEADER)
         for record in data:
-            copy_input.write(struct.pack('>h', len(self.cols)))
+            datastream.write(struct.pack('>h', len(self.cols)))
             for formatter, val in itertools.izip(self.formatters, record):
-                copy_input.write(formatter(val))
-        copy_input.write(BINCOPY_TRAILER)
+                datastream.write(formatter(val))
+        datastream.write(BINCOPY_TRAILER)
+
+    def copystream(self, datastream):
         columns = '", "'.join(self.cols)
         sql = """COPY "{0}" ("{1}")
                 FROM STDIN WITH BINARY""".format(self.table, columns)
-        copy_input.seek(0)
         cursor = self.conn.cursor()
         try:
-            cursor.copy_expert(sql, copy_input)
+            cursor.copy_expert(sql, datastream)
         except Exception, e:
             message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
             raise type(e), type(e)(message), sys.exc_info()[2]
