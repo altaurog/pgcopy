@@ -1,7 +1,7 @@
 import itertools
 from datetime import date, datetime
 from unittest import TestCase
-from pgcopy import BinaryCopy, util
+from pgcopy import CopyManager, util
 from . import get_conn
 
 class TypeMixin(object):
@@ -17,7 +17,7 @@ class TypeMixin(object):
         self.conn.rollback()
 
     def test_type(self):
-        bincopy = BinaryCopy(self.conn, 'typetest', ['id'])
+        bincopy = CopyManager(self.conn, 'typetest', ['id'])
         bincopy.copy(self.data)
         self.cur.execute("SELECT id from typetest")
         for rec in self.data:
