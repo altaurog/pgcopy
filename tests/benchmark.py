@@ -2,40 +2,13 @@ from datetime import datetime
 import random
 import string
 import time
-from timeit import default_timer
 from pgcopy import CopyManager
 from . import base
-
-class TimerMixin(object):
-    def setUp(self):
-        super(TimerMixin, self).setUp()
-        self.times = {}
-        random.seed()
-        for cls, attrname in self.capture:
-            self.wrap(cls, attrname)
-
-    def wrap(self, cls, attrname):
-        name = "%s.%s" % (cls.__name__, attrname)
-        self.times.setdefault(name, 0)
-        func = getattr(cls, attrname)
-        def wrapper(*args, **kwargs):
-            start = default_timer()
-            result = func(*args, **kwargs)
-            self.times[name] += default_timer() - start
-            return result
-        setattr(cls, attrname, wrapper)
-
-    def tearDown(self):
-        super(TimerMixin, self).tearDown()
-        print "-" * 70
-        print "%s execution times:" % self.__class__.__name__
-        for name, time in self.times.iteritems():
-            print "%30s: %.2fs" % (name, time)
 
 
 mints = time.mktime(datetime(1970, 1, 1).timetuple())
 maxts = time.mktime(datetime(2038, 1, 1).timetuple())
-class Benchmark(TimerMixin, base.DBTable):
+class Benchmark(base.DBTable):
     manager = CopyManager
     method = 'copy'
     record_count = 100000
@@ -45,12 +18,6 @@ class Benchmark(TimerMixin, base.DBTable):
             'double precision',
             'varchar(12)',
             'bool',
-        ]
-
-    capture = [
-            (manager, 'writestream'),
-            (manager, 'copystream'),
-            (manager, 'copy'),
         ]
 
     def generate_data(self, count):
@@ -74,12 +41,11 @@ class Benchmark(TimerMixin, base.DBTable):
         query = "SELECT count(*) FROM %s" % self.table
         cursor.execute(query)
         assert (cursor.fetchone()[0] == self.record_count)
+        print "-" * 70
+        print "%s execution times:" % self.__class__.__name__
+        for name, time in mgr.times.iteritems():
+            print "%30s: %.2fs" % (name, time)
 
 class ThreadingBenchmark(Benchmark):
     method = 'threading_copy'
     manager = CopyManager
-    capture = [
-            (manager, 'writestream'),
-            (manager, 'copystream'),
-            (manager, 'threading_copy'),
-        ]
