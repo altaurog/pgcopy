@@ -2,12 +2,12 @@ import itertools
 from datetime import date, datetime
 from unittest import TestCase
 from pgcopy import CopyManager, util
-from . import base
+from . import db
 
-class TypeMixin(base.DBTable):
+class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     def test_type(self):
-        self.col = base.numname(0)
+        self.col = db.numname(0)
         bincopy = CopyManager(self.conn, self.table, [self.col])
         bincopy.copy(self.data)
         self.cur.execute("SELECT %s from %s" % (self.col, self.table))

@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 import hashlib
 import math
 from pgcopy import CopyManager
-from . import base
+from . import db
 
-class Benchmark(base.DBTable):
+class Benchmark(db.TemporaryTable):
     manager = CopyManager
     method = 'copy'
     record_count = 100000

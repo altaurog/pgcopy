@@ -1,8 +1,9 @@
 from unittest import TestCase
 from pgcopy import CopyManager
-from . import get_conn
+from . import db
 
-class TestErrors(TestCase):
+class TestErrors(db.TemporaryTable, TestCase):
+    datatypes = ['integer']
     def test_nosuchcolumn(self):
-        conn = get_conn()
+        conn = self.conn
         self.assertRaises(ValueError, CopyManager, conn, 'int_notnull', ['num'])
