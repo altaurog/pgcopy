@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 import hashlib
-import math
 import psycopg2
+
+from pgcopy import util
 
 db_state = {
         'test_db': 'pgcopy_test',
@@ -51,21 +52,34 @@ def drop_db():
     cursor.close()
     master.close()
 
+genbool = lambda i: 0 == (i % 3)
+genint = lambda i: i
+genfloat = lambda i: 1.125 * i
+gendate = lambda i: date(200, 1, 1) + timedelta(i)
+gendatetime = lambda i: datetime(1970, 1, 1) + timedelta(hours=i)
+gendatetimetz = lambda i: util.to_utc(datetime(1970, 1, 1) + timedelta(hours=i))
+genstr12 = lambda i: hashlib.md5(str(i)).hexdigest()[:12 - (i % 3)]
 
 datagen = {
-        'bool': lambda i: 0 == (i % 3),
-        'integer': lambda i: i,
-        'double precision': lambda i: math.pi * i,
-        'timestamp with time zone':
-            lambda i: datetime(1970, 1, 1) + timedelta(hours=i),
-        'varchar(12)':
-            lambda i: hashlib.md5(str(i)).hexdigest()[:12],
+        'bool': genbool,
+        'smallint': genint,
+        'integer': genint,
+        'bigint': genint,
+        'real': genfloat,
+        'double precision': genfloat,
+        'date': gendate,
+        'timestamp': gendatetime,
+        'timestamp with time zone': gendatetimetz,
+        'varchar(12)': genstr12,
+        'char(12)': genstr12,
     }
 
 colname = lambda i: chr(ord('a') + i)
 
 class TemporaryTable(object):
     null = 'NOT NULL'
+    data = None
+    record_count = 0
     def setUp(self):
         self.conn = get_conn()
         self.conn.autocommit = False
@@ -79,6 +93,8 @@ class TemporaryTable(object):
                 + ', '.join(colsql)
                 + ");"
             )
+        if self.data is None and self.record_count > 0:
+            self.data = self.generate_data(self.record_count)
 
     def generate_data(self, count):
         data = []
