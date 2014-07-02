@@ -1,13 +1,9 @@
-from datetime import datetime
-import random
-import string
-import time
+from datetime import datetime, timedelta
+import hashlib
+import math
 from pgcopy import CopyManager
 from . import base
 
-
-mints = time.mktime(datetime(1970, 1, 1).timetuple())
-maxts = time.mktime(datetime(2038, 1, 1).timetuple())
 class Benchmark(base.DBTable):
     manager = CopyManager
     method = 'copy'
@@ -24,11 +20,11 @@ class Benchmark(base.DBTable):
         data = []
         for i in xrange(count):
             data.append((
-                    random.randint(-2147483648, +2147483647),
-                    datetime.fromtimestamp(random.uniform(mints, maxts)),
-                    random.uniform(-1e4,1e8),
-                    ''.join(random.sample(string.printable, random.randrange(1,13))),
-                    random.choice((True, False)),
+                    i,
+                    datetime(1970, 1, 1) + timedelta(hours=1),
+                    math.pi * i,
+                    hashlib.md5(str(i)).hexdigest()[:12],
+                    0 == (i % 3),
                 ))
         return data
 
