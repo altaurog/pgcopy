@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+import hashlib
+import math
 import psycopg2
 
 db_state = {
@@ -48,6 +51,17 @@ def drop_db():
     cursor.close()
     master.close()
 
+
+datagen = {
+        'bool': lambda i: 0 == (i % 3),
+        'integer': lambda i: i,
+        'double precision': lambda i: math.pi * i,
+        'timestamp with time zone':
+            lambda i: datetime(1970, 1, 1) + timedelta(hours=i),
+        'varchar(12)':
+            lambda i: hashlib.md5(str(i)).hexdigest()[:12],
+    }
+
 colname = lambda i: chr(ord('a') + i)
 
 class TemporaryTable(object):
@@ -65,6 +79,14 @@ class TemporaryTable(object):
                 + ', '.join(colsql)
                 + ");"
             )
+
+    def generate_data(self, count):
+        data = []
+        gen = [datagen[t] for t in self.datatypes]
+        for i in xrange(count):
+            row = [g(i) for g in gen]
+            data.append(tuple(row))
+        return data
 
     def tearDown(self):
         self.conn.rollback()

@@ -1,6 +1,3 @@
-from datetime import datetime, timedelta
-import hashlib
-import math
 from pgcopy import CopyManager
 from . import db
 
@@ -15,18 +12,6 @@ class Benchmark(db.TemporaryTable):
             'varchar(12)',
             'bool',
         ]
-
-    def generate_data(self, count):
-        data = []
-        for i in xrange(count):
-            data.append((
-                    i,
-                    datetime(1970, 1, 1) + timedelta(hours=1),
-                    math.pi * i,
-                    hashlib.md5(str(i)).hexdigest()[:12],
-                    0 == (i % 3),
-                ))
-        return data
 
     def benchmark(self):
         data = self.generate_data(self.record_count)
