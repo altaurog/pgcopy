@@ -1,3 +1,4 @@
+import pandas as pd
 from pgcopy import CopyManager
 from . import db
 
@@ -12,6 +13,10 @@ class Benchmark(db.TemporaryTable):
             'varchar(12)',
             'bool',
         ]
+
+    def dataframe(self):
+        df = pd.DataFrame(self.data, columns=self.cols)
+        return df
 
     def do_copy(self, mgr):
         getattr(mgr, self.method)(self.data)
@@ -31,6 +36,9 @@ class Benchmark(db.TemporaryTable):
         for name, time in mgr.times.iteritems():
             print "%30s: %.2fs" % (name, time)
 
-class ThreadingBenchmark(Benchmark):
-    method = 'threading_copy'
-    manager = CopyManager
+class CythonBenchmark(Benchmark):
+    def do_copy(self, mgr):
+        df = self.dataframe()
+        strdate = lambda dt: dt.isoformat()
+        df['b'] = pd.to_datetime(df.b.apply(strdate))
+        mgr.copy_dataframe(df)
