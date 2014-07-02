@@ -7,10 +7,6 @@ PostgreSQL database table using `binary copy`_.
 Installation
 -------------
 
-The easy way::
-
-    pip install pgcopy
-
 pgcopy requires the psycopg2_ db adapter.  nose_ is required to run the tests.
 
 Basic use
