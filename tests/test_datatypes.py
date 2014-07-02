@@ -8,10 +8,10 @@ class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     record_count = 3
     def test_type(self):
-        self.col = db.colname(0)
-        bincopy = CopyManager(self.conn, self.table, [self.col])
+        bincopy = CopyManager(self.conn, self.table, self.cols)
         bincopy.copy(self.data)
-        self.cur.execute("SELECT %s from %s" % (self.col, self.table))
+        select_list = ','.join(self.cols)
+        self.cur.execute("SELECT %s from %s" % (select_list, self.table))
         for rec in self.data:
             self.checkValues(rec, self.cur.fetchone())
 

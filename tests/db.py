@@ -93,6 +93,7 @@ class TemporaryTable(object):
                 + ', '.join(colsql)
                 + ");"
             )
+        self.cols = [colname(i) for i in range(len(self.datatypes))]
         if self.data is None and self.record_count > 0:
             self.data = self.generate_data(self.record_count)
 
