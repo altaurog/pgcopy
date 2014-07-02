@@ -48,7 +48,7 @@ def drop_db():
     cursor.close()
     master.close()
 
-numname = lambda i: chr(ord('a') + i)
+colname = lambda i: chr(ord('a') + i)
 
 class TemporaryTable(object):
     null = 'NOT NULL'
@@ -59,7 +59,7 @@ class TemporaryTable(object):
         self.table = self.__class__.__name__.lower()
         colsql = []
         for i, coltype in enumerate(self.datatypes):
-            colsql.append('%s %s %s' % (numname(i), coltype, self.null))
+            colsql.append('%s %s %s' % (colname(i), coltype, self.null))
         self.cur.execute(
                 "CREATE TEMPORARY TABLE %s (" % self.table
                 + ', '.join(colsql)

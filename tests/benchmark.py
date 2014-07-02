@@ -30,7 +30,7 @@ class Benchmark(db.TemporaryTable):
 
     def benchmark(self):
         data = self.generate_data(self.record_count)
-        cols = [base.numname(i) for i in range(len(self.datatypes))]
+        cols = [db.colname(i) for i in range(len(self.datatypes))]
         mgr = self.manager(self.conn, self.table, cols)
         getattr(mgr, self.method)(data)
         cursor = self.conn.cursor()

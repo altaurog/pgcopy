@@ -7,7 +7,7 @@ from . import db
 class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     def test_type(self):
-        self.col = db.numname(0)
+        self.col = db.colname(0)
         bincopy = CopyManager(self.conn, self.table, [self.col])
         bincopy.copy(self.data)
         self.cur.execute("SELECT %s from %s" % (self.col, self.table))
