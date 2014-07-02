@@ -13,15 +13,19 @@ class Benchmark(db.TemporaryTable):
             'bool',
         ]
 
-    def benchmark(self):
-        data = self.generate_data(self.record_count)
-        cols = [db.colname(i) for i in range(len(self.datatypes))]
-        mgr = self.manager(self.conn, self.table, cols)
-        getattr(mgr, self.method)(data)
+    def do_copy(self, mgr):
+        getattr(mgr, self.method)(self.data)
+
+    def check_count(self):
         cursor = self.conn.cursor()
         query = "SELECT count(*) FROM %s" % self.table
         cursor.execute(query)
         assert (cursor.fetchone()[0] == self.record_count)
+
+    def benchmark(self):
+        mgr = self.manager(self.conn, self.table, self.cols)
+        self.do_copy(mgr)
+        self.check_count()
         print "-" * 70
         print "%s execution times:" % self.__class__.__name__
         for name, time in mgr.times.iteritems():
