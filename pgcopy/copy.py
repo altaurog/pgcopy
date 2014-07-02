@@ -14,21 +14,21 @@ from . import inspect, util
 __all__ = ['CopyManager']
 
 BINCOPY_HEADER = struct.pack('>11sii', b'PGCOPY\n\377\r\n\0', 0, 0)
-BINCOPY_NULL = struct.pack('>i', -1)
 BINCOPY_TRAILER = struct.pack('>h', -1)
 
 def simple_formatter(fmt):
     size = struct.calcsize('>' + fmt)
-    fmt_str = '>i' + fmt
-    return lambda val: struct.pack(fmt_str, size, val)
+    return lambda val: ('i' + fmt, (size, val))
 
 def str_formatter(val):
-    return struct.pack('>I', len(val)) + val
+    size = len(val)
+    return ('i%ss' % size, (size, val))
 
 def maxsize_formatter(maxsize):
     def formatter(val):
         val = val[:maxsize]
-        return struct.pack('>I', len(val)) + val
+        size = len(val)
+        return ('i%ss' % size, (size, val))
     return formatter
 
 psql_epoch = 946684800
@@ -42,16 +42,16 @@ def timestamp(dt):
     # timetuple doesn't maintain microseconds
     # see http://stackoverflow.com/a/14369386/519015
     val = ((unix_timestamp - psql_epoch) * 1e6) + dt.microsecond
-    return struct.pack('>iq', 8, val)
+    return ('iq', (8, val))
 
 def datestamp(d):
     'days since 2000-01-01'
-    return struct.pack('>ii', 4, (d - psql_epoch_date).days)
+    return ('ii', (4, (d - psql_epoch_date).days))
 
 def null(formatter):
     def nullcheck(val):
         if val is None:
-            return BINCOPY_NULL
+            return ('i', (-1,))
         return formatter(val)
     return nullcheck
 
@@ -114,10 +114,15 @@ class CopyManager(object):
     def writestream(self, data, datastream):
         start = default_timer()
         datastream.write(BINCOPY_HEADER)
+        count = len(self.cols)
         for record in data:
-            datastream.write(struct.pack('>h', len(self.cols)))
+            fmt = ['>h']
+            rdat = [count]
             for formatter, val in itertools.izip(self.formatters, record):
-                datastream.write(formatter(val))
+                f, d = formatter(val)
+                fmt.append(f)
+                rdat.extend(d)
+            datastream.write(struct.pack(''.join(fmt), *rdat))
         datastream.write(BINCOPY_TRAILER)
         self.times['writestream'] = default_timer() - start
 
