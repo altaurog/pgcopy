@@ -45,6 +45,7 @@ def drop_db():
     "Drop test db"
     if not db_state['drop']:
         return
+    get_conn().close()
     master = psycopg2.connect(database='postgres')
     master.autocommit = True
     cursor = master.cursor()
