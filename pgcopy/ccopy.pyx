@@ -21,6 +21,12 @@ cdef extern from "endian.h" nogil:
     uint32_t htobe32(uint32_t)
     uint16_t htobe16(uint16_t)
 
+cdef extern from "sys/uio.h" nogil:
+    struct iovec:
+        void *iov_base
+        size_t iov_len
+    ssize_t writev(int fd, iovec *iov, int iovcnt)
+
 BINCOPY_HEADER = b'PGCOPY\n\377\r\n\0' + 8 * '\0'
 BINCOPY_TRAILER = b'\xff\xff'
 cdef int PG_NULL = -1  # Here be and le are the same
@@ -156,23 +162,36 @@ cdef class CopyManager:
         cdef uint16_t becount = field_count
         becount = htobe16(becount)
         cdef uint32_t fsize
-        cdef uint32_t befsize
+        cdef uint32_t *befsize = <uint32_t *>malloc(field_count * sizeof(uint32_t))
+        cdef iovec *wrv = <iovec *>malloc((2 * field_count + 1) * sizeof(iovec))
+        cdef uint16_t k
         with nogil:
+            wrv[0].iov_base = &becount
+            wrv[0].iov_len = 2
             for i in range(row_count):
-                write(fd, &becount, 2)
+                k = 1
                 for j in range(field_count):
                     if field[j].isnullable:
                         if data[field[j].isnull_offset]:
-                            write(fd, &PG_NULL, 4)
+                            wrv[k].iov_base = &PG_NULL
+                            wrv[k].iov_len = 4
+                            k += 1
                             continue
                     fptr = data + field[j].offset
                     fsize = field[j].size
                     if field[j].isstr:
                         fsize = strnlen(fptr, fsize)
-                    befsize = htobe32(fsize)
-                    write(fd, &befsize, 4)
-                    write(fd, fptr, fsize)
+                    befsize[j] = htobe32(fsize)
+                    wrv[k].iov_base = befsize + j
+                    wrv[k].iov_len = 4
+                    k += 1
+                    wrv[k].iov_base = fptr
+                    wrv[k].iov_len = fsize
+                    k += 1
+                writev(fd, wrv, k)
                 data += itemsize
+        free(befsize)
+        free(wrv)
 
     def __dealloc__(self):
         free(self.field)
