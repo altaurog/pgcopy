@@ -3,6 +3,7 @@ import itertools
 import os
 import struct
 import sys
+import tempfile
 import threading
 
 from cStringIO import StringIO
@@ -99,10 +100,11 @@ class CopyManager(object):
             self.formatters.append(f)
 
     def copy(self, data):
-        datastream = StringIO()
+        datastream = tempfile.TemporaryFile()
         self.writestream(data, datastream)
         datastream.seek(0)
         self.copystream(datastream)
+        datastream.close()
 
     def threading_copy(self, data):
         r_fd, w_fd = os.pipe()

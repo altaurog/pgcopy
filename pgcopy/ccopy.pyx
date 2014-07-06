@@ -1,78 +1,192 @@
 cimport cython
 cimport numpy as np
 from posix.unistd cimport write
+from libc.string cimport strlen
+from libc.stdlib cimport malloc, free
 
-cdef extern from "endian.h":
+from datetime import date, datetime
+import tempfile
+import sys
+import pandas as pd
+import pytz
+import time
+from . import inspect
+
+cdef extern from "string.h" nogil:
+    size_t strnlen(char*, size_t maxlen)
+
+cdef extern from "endian.h" nogil:
     ctypedef unsigned short uint16_t
     ctypedef unsigned int   uint32_t
     uint32_t htobe32(uint32_t)
     uint16_t htobe16(uint16_t)
 
-cdef BINCOPY_HEADER = b'PGCOPY\n\377\r\n\0' + 8 * '\0'
-cdef short BINCOPY_TRAILER = -1
+BINCOPY_HEADER = b'PGCOPY\n\377\r\n\0' + 8 * '\0'
+BINCOPY_TRAILER = b'\xff\xff'
+cdef int PG_NULL = -1  # Here be and le are the same
 
-cdef int NULL = -1
-cdef unsigned int size[3]
-for i, s in enumerate([1,4,8]):
-    size[i] = htobe32(s)
+cdef struct Field:
+    unsigned int offset
+    unsigned int size
+    unsigned int isnull_offset
+    bint isnullable
+    bint isstr
 
-def write_dataframe(fd, df):
-    writedf(fd,
-            df.iloc[:,0].astype('int32').values,
-            df.iloc[:,1].astype('int64').values,
-            df.iloc[:,2].values,
-            df.iloc[:,3].values,
-            df.iloc[:,4].values,)
+dtype_map = {
+    'bool': 'i1',
+    'int2': 'i2',
+    'int4': 'i4',
+    'int8': 'i8',
+    'float4' : 'f4',
+    'float8': 'f8',
+    'varchar': 'a',
+    'bpchar': 'a',      # (blank-padded) char
+    'date': 'i',
+    'timestamp': 'q',
+    'timestamptz': 'q',
+}
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef writedf(
-            int fd,
-            np.ndarray[int] acol,
-            np.ndarray bcol,
-            np.ndarray[double] ccol,
-            np.ndarray[object] dcol,
-            np.ndarray ecol,
-        ):
-    cdef Py_ssize_t i, n = len(acol)
-    cdef long a
-    cdef long b
-    cdef double c
-    cdef char* d
-    cdef char e
-    cdef unsigned short count = 5
-    count = htobe16(count)
+cdef class CopyManager:
+    cdef Field* field
+    cdef public object conn, table, cols, times
+    cdef public object column_defs, data_dtype
+    def __cinit__(self, conn, table, cols):
+        self.field = <Field *>malloc(len(cols) * sizeof(Field))
+        self.conn = conn
+        self.table = table
+        self.cols = cols
+        self.times = {}
+        self.column_defs = None
 
-    cdef unsigned int varsize = 0
+    def __init__(self, conn, table, cols):
+        self.compile()
 
-    acol = acol.byteswap()
-    bcol = ((bcol - 946684800000000000)/1000).byteswap()
-    ccol = ccol.byteswap()
+    def get_types(self):
+        return inspect.get_types(self.conn, self.table)
 
-    write(fd, b'PGCOPY\n\377\r\n\0', 11)
-    write(fd, &varsize, 4)
-    write(fd, &varsize, 4)
-    for i in range(n):
-        write(fd, &count, 2)
+    def compile(self):
+        if self.column_defs is not None:
+            return
+        type_dict = self.get_types()
+        self.column_defs = []
+        dtype_def = []
+        nulls = []
+        for i, colname in enumerate(self.cols):
+            try:
+                type_info = type_dict[colname]
+            except KeyError:
+                message = '"%s" is not a column of table "%s"'
+                raise ValueError(message % (colname, self.table))
+            coltype, typemod, notnull = type_info
+            try:
+                dtype_str = dtype_map[coltype]
+            except KeyError:
+                message = '"%s" is not a supported datatype'
+                raise ValueError(message % (coltype,))
+            if typemod > -1:
+                field_dtype = np.dtype('%s%d' % (dtype_str, typemod))
+            else:
+                field_dtype = np.dtype('>' + dtype_str)
+            fname = 'f%d' % i
+            dtype_def.append((fname, field_dtype))
+            if not notnull:
+                nulls.append(('n' + fname, 'b'))
+            self.column_defs.append((colname, fname, coltype, typemod, notnull))
+        dtype_def.extend(nulls)
+        self.data_dtype = np.dtype(dtype_def, align=True)
+        for i, coldef in enumerate(self.column_defs):
+            colname, fname, coltype, typemod, notnull = coldef
+            fdef = self.data_dtype.fields[fname]
+            self.field[i].offset = fdef[1]
+            self.field[i].size = fdef[0].itemsize
+            self.field[i].isnullable = not notnull
+            self.field[i].isstr = (typemod > -1)
+            if not notnull:
+                null_fdef = self.data_dtype.fields['n' + fname]
+                self.field[i].isnull_offset = null_fdef[1]
 
-        a = acol[i]
-        write(fd, size + 1, 4)
-        write(fd, &a, 4)
+    def copy(self, data):
+        datastream = tempfile.TemporaryFile()
+        datastream.write(BINCOPY_HEADER)
+        datastream.flush()
+        self.writestream(data, datastream)
+        datastream.write(BINCOPY_TRAILER)
+        datastream.flush()
+        datastream.seek(0)
+        self.copystream(datastream)
+        datastream.close()
 
-        b = bcol[i]
-        write(fd, size + 2, 4)
-        write(fd, &b, 8)
+    def writestream(self, data, datastream):
+        start = time.time()
+        a = self.prepare_data(data)
+        self.write_data(datastream, a)
+        self.times['writestream'] = time.time() - start
 
-        c = ccol[i]
-        write(fd, size + 2, 4)
-        write(fd, &c, 8)
+    def prepare_data(self, df):
+        self.compile()
+        df_spec = {}
+        for i, coldef in enumerate(self.column_defs):
+            colname, fname, coltype, typemod, notnull = coldef
+            if coltype == 'date':
+                nanoseconds = (df[colname] - date(2000, 1, 1)).astype('i8')
+                df_spec[fname] = nanoseconds/1e9/60/60/24
+            elif coltype.startswith('timestamp'):
+                epoch = datetime(2000, 1, 1)
+                if df[colname].dtype is np.dtype('O'):
+                    epoch = pytz.UTC.localize(epoch)
+                df_spec[fname] = (df[colname] - epoch)/1000
+            else:
+                df_spec[fname] = df[colname]
+            if not notnull:
+                df_spec['n' + fname] = df[colname].isnull()
+        return pd.DataFrame(df_spec).to_records(False).astype(self.data_dtype)
 
-        d = dcol[i]
-        varsize = htobe32(len(d))
-        write(fd, &varsize, 4)
-        write(fd, d, len(d))
+    def write_data(self, datastream, a):
+        self._write_data(datastream.fileno(), a)
 
-        e = ecol[i]
-        write(fd, size, 4)
-        write(fd, &e, 1)
-    write(fd, &BINCOPY_TRAILER, 2)
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef _write_data(self, int fd, np.ndarray records):
+        cdef Py_ssize_t i, row_count = len(records)
+        cdef Py_ssize_t j, field_count = len(self.cols)
+        cdef uint16_t itemsize = records.itemsize
+        cdef Field* field = self.field
+        cdef char* data = <char *>records.data
+        cdef char* fptr
+        cdef uint16_t becount = field_count
+        becount = htobe16(becount)
+        cdef uint32_t fsize
+        cdef uint32_t befsize
+        with nogil:
+            for i in range(row_count):
+                write(fd, &becount, 2)
+                for j in range(field_count):
+                    if field[j].isnullable:
+                        if data[field[j].isnull_offset]:
+                            write(fd, &PG_NULL, 4)
+                            continue
+                    fptr = data + field[j].offset
+                    fsize = field[j].size
+                    if field[j].isstr:
+                        fsize = strnlen(fptr, fsize)
+                    befsize = htobe32(fsize)
+                    write(fd, &befsize, 4)
+                    write(fd, fptr, fsize)
+                data += itemsize
+
+    def __dealloc__(self):
+        free(self.field)
+
+    def copystream(self, datastream):
+        start = time.time()
+        columns = '", "'.join(self.cols)
+        sql = """COPY "{0}" ("{1}")
+                FROM STDIN WITH BINARY""".format(self.table, columns)
+        cursor = self.conn.cursor()
+        try:
+            cursor.copy_expert(sql, datastream)
+        except Exception, e:
+            message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
+            raise type(e), type(e)(message), sys.exc_info()[2]
+        self.times['copystream'] = time.time() - start
+

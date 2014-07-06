@@ -4,7 +4,6 @@ from . import db
 
 class Benchmark(db.TemporaryTable):
     manager = CopyManager
-    method = 'copy'
     record_count = 100000
     datatypes = [
             'integer',
@@ -19,7 +18,7 @@ class Benchmark(db.TemporaryTable):
         return df
 
     def do_copy(self, mgr):
-        getattr(mgr, self.method)(self.data)
+        mgr.copy(self.dataframe().itertuples(False))
 
     def check_count(self):
         cursor = self.conn.cursor()
@@ -36,9 +35,15 @@ class Benchmark(db.TemporaryTable):
         for name, time in mgr.times.iteritems():
             print "%30s: %.2fs" % (name, time)
 
-class CythonBenchmark(Benchmark):
-    def do_copy(self, mgr):
-        df = self.dataframe()
-        strdate = lambda dt: dt.isoformat()
-        df['b'] = pd.to_datetime(df.b.apply(strdate))
-        mgr.copy_dataframe(df)
+try:
+    import pyximport
+    pyximport.install()
+    from pgcopy import ccopy
+
+    class CythonBenchmark(Benchmark):
+        manager = ccopy.CopyManager
+        def do_copy(self, mgr):
+            df = self.dataframe()
+            mgr.copy(df)
+except ImportError:
+    pass
