@@ -53,8 +53,6 @@ class ExecuteManyBenchmark(Benchmark):
         self.print_results([('executemany', elapsed)])
 
 try:
-    import pyximport
-    pyximport.install()
     from pgcopy import ccopy
 
     class CythonBenchmark(Benchmark):

@@ -1,11 +1,11 @@
-from unittest import TestCase
 import numpy as np
 import pandas as pd
 try:
-    import pyximport
-    pyximport.install()
     from pgcopy import ccopy
+except ImportError:
+    ccopy = None
 
+if ccopy is not None:
     class CompileMixin(object):
         def setUp(self):
             type_dict = self.type_dict
@@ -18,7 +18,7 @@ try:
             data = [[1, 'hello'],[None, 'goodbye farewell']]
             self.data = pd.DataFrame(data, columns=['a', 'b'])
 
-    class TestCompileInt(CompileMixin, TestCase):
+    class TestCompileInt(CompileMixin):
         type_dict = {'a': ['int8', -1, False],
                     'b': ['varchar', 10, True],}
 
@@ -51,5 +51,6 @@ try:
                 self.mgr.writestream(self.data, f.fileno())
                 f.seek(0)
                 self.assertEqual(f.read(), expected)
-except ImportError:
-    pass
+
+        def assertEqual(self, a, b):
+            assert (a == b)

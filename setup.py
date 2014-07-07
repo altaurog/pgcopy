@@ -1,5 +1,6 @@
 from os.path import join, dirname
 from setuptools import setup
+from Cython.Build import cythonize
 
 package_name = "pgcopy"
 base_dir = dirname(__file__)
@@ -30,6 +31,7 @@ setup(
     license = 'MIT',
     url = "http://bitbucket.org/altaurog/pgcopy",
     packages = [package_name],
+    ext_modules = cythonize("%s/*.pyx" % package_name),
     install_requires = ["psycopg2"],
     classifiers = [
         "Programming Language :: Python",

@@ -1,12 +1,10 @@
 import itertools
-from datetime import date, time, datetime
-from unittest import TestCase
 from pgcopy import CopyManager, util
+
 try:
-    import pandas as pd
-    import pyximport
-    pyximport.install()
     from pgcopy import ccopy
+    import pandas as pd
+    from datetime import datetime, time
 except ImportError:
     ccopy = None
 
@@ -15,9 +13,8 @@ from . import db
 class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     record_count = 3
-    manager = CopyManager
     def test_type(self):
-        bincopy = self.manager(self.conn, self.table, self.cols)
+        bincopy = CopyManager(self.conn, self.table, self.cols)
         bincopy.copy(self.data)
         select_list = ','.join(self.cols)
         self.cur.execute("SELECT %s from %s" % (select_list, self.table))
@@ -26,44 +23,44 @@ class TypeMixin(db.TemporaryTable):
 
     def checkValues(self, expected, found):
         for a, b in itertools.izip(expected, found):
-            self.assertEqual(a, self.cast(b))
+            assert (a == self.cast(b))
 
     def cast(self, v): return v
 
-class IntegerTest(TypeMixin, TestCase):
+class TestInteger(TypeMixin):
     datatypes = ['integer']
 
-class BoolTest(TypeMixin, TestCase):
+class TestBool(TypeMixin):
     datatypes = ['bool']
 
-class SmallIntTest(TypeMixin, TestCase):
+class TestSmallInt(TypeMixin):
     datatypes = ['smallint']
 
-class BigIntTest(TypeMixin, TestCase):
+class TestBigInt(TypeMixin):
     datatypes = ['bigint']
 
-class RealTest(TypeMixin, TestCase):
+class TestReal(TypeMixin):
     datatypes = ['real']
 
-class DoubleTest(TypeMixin, TestCase):
+class TestDouble(TypeMixin):
     datatypes = ['double precision']
 
-class NullTest(TypeMixin, TestCase):
+class TestNull(TypeMixin):
     null = 'NULL'
     datatypes = ['integer']
     data = [(1,), (2,), (None,)]
 
-class VarcharTest(TypeMixin, TestCase):
+class TestVarchar(TypeMixin):
     datatypes = ['varchar(12)']
 
-class CharTest(TypeMixin, TestCase):
+class TestChar(TypeMixin):
     datatypes = ['char(12)']
 
     def cast(self, v):
-        self.assertEqual(12, len(v))
+        assert (12 == len(v))
         return v.strip()
 
-class TextTest(TypeMixin, TestCase):
+class TestText(TypeMixin):
     datatypes = ['text']
     data = [
         ('Fourscore and seven years ago our fathers set forth'
@@ -72,7 +69,7 @@ class TextTest(TypeMixin, TestCase):
          'and integrate systems more effectively.',),
     ]
 
-class ByteaTest(TypeMixin, TestCase):
+class TestBytea(TypeMixin):
     datatypes = ['bytea']
     data = [
         ('\x02\xf3\x18\x44 alphabet',),
@@ -80,26 +77,25 @@ class ByteaTest(TypeMixin, TestCase):
     ,]
 
     def cast(self, v):
-        self.assertIsInstance(v, buffer)
+        assert isinstance(v, buffer)
         return str(v)
 
-class TimestampTest(TypeMixin, TestCase):
+class TestTimestamp(TypeMixin):
     datatypes = ['timestamp']
 
-class TimestampTZTest(TypeMixin, TestCase):
+class TestTimestampTZ(TypeMixin):
     datatypes = ['timestamp with time zone']
 
     def cast(self, v):
         return util.to_utc(v)
 
-class DateTest(TypeMixin, TestCase):
+class TestDate(TypeMixin):
     datatypes = ['date']
 
 if ccopy is not None:
-    class CMixin(TypeMixin):
-        manager = ccopy.CopyManager
+    class CTypeMixin(TypeMixin):
         def test_type(self):
-            bincopy = self.manager(self.conn, self.table, self.cols)
+            bincopy = ccopy.CopyManager(self.conn, self.table, self.cols)
             bincopy.copy(self.dataframe())
             select_list = ','.join(self.cols)
             self.cur.execute("SELECT %s from %s" % (select_list, self.table))
@@ -109,40 +105,40 @@ if ccopy is not None:
         def dataframe(self):
             return pd.DataFrame(self.data, columns=self.cols)
 
-    class CIntegerTest(CMixin, TestCase):
+    class TestCInteger(CTypeMixin):
         datatypes = ['integer']
 
-    class CBoolTest(CMixin, TestCase):
+    class TestCBool(CTypeMixin):
         datatypes = ['bool']
 
-    class CSmallIntTest(CMixin, TestCase):
+    class TestCSmallInt(CTypeMixin):
         datatypes = ['smallint']
 
-    class CBigIntTest(CMixin, TestCase):
+    class TestCBigInt(CTypeMixin):
         datatypes = ['bigint']
 
-    class CRealTest(CMixin, TestCase):
+    class TestCReal(CTypeMixin):
         datatypes = ['real']
 
-    class CDoubleTest(CMixin, TestCase):
+    class TestCDouble(CTypeMixin):
         datatypes = ['double precision']
 
-    class CNullTest(CMixin, TestCase):
+    class TestCNull(CTypeMixin):
         null = 'NULL'
         datatypes = ['integer']
         data = [(1,), (2,), (None,)]
 
-    class CVarcharTest(CMixin, TestCase):
+    class TestCVarchar(CTypeMixin):
         datatypes = ['varchar(12)']
 
-    class CCharTest(CMixin, TestCase):
+    class TestCChar(CTypeMixin):
         datatypes = ['char(12)']
 
         def cast(self, v):
-            self.assertEqual(12, len(v))
+            assert (12 == len(v))
             return v.strip()
 
-    class CDateTest(CMixin, TestCase):
+    class TestCDate(CTypeMixin):
         def dataframe(self):
             t0 = time(0)
             data = [[datetime.combine(d, t0) for d in row] for row in self.data]
@@ -150,10 +146,10 @@ if ccopy is not None:
 
         datatypes = ['date']
 
-    class CTimestampTest(CMixin, TestCase):
+    class TestCTimestamp(CTypeMixin):
         datatypes = ['timestamp']
 
-    class CTimestampTZTest(CMixin, TestCase):
+    class TestCTimestampTZ(CTypeMixin):
         datatypes = ['timestamp with time zone']
 
         def cast(self, v):

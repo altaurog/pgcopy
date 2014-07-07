@@ -2,10 +2,6 @@ from cStringIO import StringIO
 from pgcopy import CopyManager
 from . import db
 
-import pandas as pd
-import pyximport
-pyximport.install()
-from pgcopy import ccopy
 
 class Sanity(db.TemporaryTable):
     manager = CopyManager
@@ -26,16 +22,6 @@ class Sanity(db.TemporaryTable):
         datastream.seek(0)
         self.assertCorrect(datastream.read())
 
-    def cy_sanity(self):
-        fname = 'copydata.tmp'
-        df = pd.DataFrame(self.data, columns=self.cols)
-        strdate = lambda dt: dt.isoformat()
-        df['b'] = pd.to_datetime(df.b.apply(strdate))
-        with open(fname, 'w+b') as f:
-            ccopy.write_dataframe(f.fileno(), df)
-            f.seek(0)
-            self.assertCorrect(f.read())
-
     def assertCorrect(self, test):
         assert self.expected_output == test
 
@@ -55,3 +41,19 @@ class Sanity(db.TemporaryTable):
             '\x00\xff\xff'
         )
 
+try:
+    import pandas as pd
+    from pgcopy import ccopy
+
+    class CSanity(Sanity):
+        def sanity(self):
+            fname = 'copydata.tmp'
+            mgr = ccopy.manager(self.conn, self.table, self.cols)
+            df = pd.DataFrame(self.data, columns=self.cols)
+            with open(fname, 'w+b') as f:
+                mgr.write_dataframe(f.fileno(), df)
+                f.seek(0)
+                self.assertCorrect(f.read())
+
+except ImportError:
+    pass
