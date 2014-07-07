@@ -1,8 +1,8 @@
 cimport cython
 cimport numpy as np
 from posix.unistd cimport write
-from libc.string cimport strlen
 from libc.stdlib cimport malloc, free
+from libc.stdio cimport FILE, fdopen, fwrite, fflush
 
 from datetime import date, datetime
 import tempfile
@@ -21,8 +21,8 @@ cdef extern from "endian.h" nogil:
     uint32_t htobe32(uint32_t)
     uint16_t htobe16(uint16_t)
 
-BINCOPY_HEADER = b'PGCOPY\n\377\r\n\0' + 8 * '\0'
-BINCOPY_TRAILER = b'\xff\xff'
+cdef char* BINCOPY_HEADER = 'PGCOPY\n\377\r\n\0\0\0\0\0\0\0\0\0'
+cdef char* BINCOPY_TRAILER = '\xff\xff'
 cdef int PG_NULL = -1  # Here be and le are the same
 
 cdef struct Field:
@@ -107,19 +107,17 @@ cdef class CopyManager:
 
     def copy(self, data):
         datastream = tempfile.TemporaryFile()
-        datastream.write(BINCOPY_HEADER)
-        datastream.flush()
-        self.writestream(data, datastream)
-        datastream.write(BINCOPY_TRAILER)
-        datastream.flush()
+        self.writestream(data, datastream.fileno())
         datastream.seek(0)
         self.copystream(datastream)
         datastream.close()
 
-    def writestream(self, data, datastream):
+    def writestream(self, data, fd):
         start = time.time()
         a = self.prepare_data(data)
-        self.write_data(datastream, a)
+        write(fd, BINCOPY_HEADER, 19)
+        self.write_data(fd, a)
+        write(fd, BINCOPY_TRAILER, 2)
         self.times['writestream'] = time.time() - start
 
     def prepare_data(self, df):
@@ -141,12 +139,13 @@ cdef class CopyManager:
                 df_spec['n' + fname] = df[colname].isnull()
         return pd.DataFrame(df_spec).to_records(False).astype(self.data_dtype)
 
-    def write_data(self, datastream, a):
-        self._write_data(datastream.fileno(), a)
+    def write_data(self, fd, a):
+        self._write_data(fd, a)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cdef _write_data(self, int fd, np.ndarray records):
+        cdef FILE* outs = fdopen(fd, 'wb')
         cdef Py_ssize_t i, row_count = len(records)
         cdef Py_ssize_t j, field_count = len(self.cols)
         cdef uint16_t itemsize = records.itemsize
@@ -159,20 +158,21 @@ cdef class CopyManager:
         cdef uint32_t befsize
         with nogil:
             for i in range(row_count):
-                write(fd, &becount, 2)
+                fwrite(&becount, 2, 1, outs)
                 for j in range(field_count):
                     if field[j].isnullable:
                         if data[field[j].isnull_offset]:
-                            write(fd, &PG_NULL, 4)
+                            fwrite(&PG_NULL, 4, 1, outs)
                             continue
                     fptr = data + field[j].offset
                     fsize = field[j].size
                     if field[j].isstr:
                         fsize = strnlen(fptr, fsize)
                     befsize = htobe32(fsize)
-                    write(fd, &befsize, 4)
-                    write(fd, fptr, fsize)
+                    fwrite(&befsize, 4, 1, outs)
+                    fwrite(fptr, fsize, 1, outs)
                 data += itemsize
+            fflush(outs)
 
     def __dealloc__(self):
         free(self.field)

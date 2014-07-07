@@ -38,14 +38,17 @@ try:
             self.assertEqual(a[1][2], 1)
 
         def test_writedata(self):
-            expected = ('\x00\x02'
+            expected = ('PGCOPY\n\xff\r\n\x00'
+                        '\x00\x00\x00\x00\x00\x00\x00\x00'
+                        '\x00\x02'
                         '\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x01'
                         '\x00\x00\x00\x05hello'
                         '\x00\x02'
                         '\xff\xff\xff\xff'
-                        '\x00\x00\x00\x0agoodbye fa')
+                        '\x00\x00\x00\x0agoodbye fa'
+                        '\xff\xff')
             with open('testtemp.dat', 'w+b') as f:
-                self.mgr.writestream(self.data, f)
+                self.mgr.writestream(self.data, f.fileno())
                 f.seek(0)
                 self.assertEqual(f.read(), expected)
 except ImportError:
