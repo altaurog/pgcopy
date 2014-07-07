@@ -48,14 +48,13 @@ dtype_map = {
 
 cdef class CopyManager:
     cdef Field* field
-    cdef public object conn, table, cols, times
+    cdef public object conn, table, cols
     cdef public object column_defs, data_dtype
     def __cinit__(self, conn, table, cols):
         self.field = <Field *>malloc(len(cols) * sizeof(Field))
         self.conn = conn
         self.table = table
         self.cols = cols
-        self.times = {}
         self.column_defs = None
 
     def __init__(self, conn, table, cols):
@@ -113,12 +112,10 @@ cdef class CopyManager:
         datastream.close()
 
     def writestream(self, data, fd):
-        start = time.time()
         a = self.prepare_data(data)
         write(fd, BINCOPY_HEADER, 19)
         self.write_data(fd, a)
         write(fd, BINCOPY_TRAILER, 2)
-        self.times['writestream'] = time.time() - start
 
     def prepare_data(self, df):
         self.compile()
@@ -178,7 +175,6 @@ cdef class CopyManager:
         free(self.field)
 
     def copystream(self, datastream):
-        start = time.time()
         columns = '", "'.join(self.cols)
         sql = """COPY "{0}" ("{1}")
                 FROM STDIN WITH BINARY""".format(self.table, columns)
@@ -188,5 +184,4 @@ cdef class CopyManager:
         except Exception, e:
             message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
             raise type(e), type(e)(message), sys.exc_info()[2]
-        self.times['copystream'] = time.time() - start
 

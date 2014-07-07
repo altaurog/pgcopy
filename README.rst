@@ -72,33 +72,19 @@ Currently the following PostgreSQL datatypes are supported:
 Benchmarks
 -----------
 
-Below are simple benchmarks for 100000 records::
+Below are simple benchmarks for 100000 records.
+This gives a general idea of the kind of speedup 
+available with pgcopy::
 
     $ nosetests -c tests/benchmark.cfg 
+                         Benchmark:   1.07s
+                   CythonBenchmark:   0.46s
+              ExecuteManyBenchmark:  15.85s
+                     NullBenchmark:   1.13s
+               NullCythonBenchmark:   0.51s
+          NullExecuteManyBenchmark:  15.87s
     ----------------------------------------------------------------------
-    Benchmark execution times:
-                        copystream: 0.08s
-                       writestream: 0.98s
-    ----------------------------------------------------------------------
-    CythonBenchmark execution times:
-                        copystream: 0.08s
-                       writestream: 0.37s
-    ----------------------------------------------------------------------
-    ExecuteManyBenchmark execution times:
-                       executemany: 15.76s
-    ----------------------------------------------------------------------
-    NullBenchmark execution times:
-                        copystream: 0.08s
-                       writestream: 1.04s
-    ----------------------------------------------------------------------
-    NullCythonBenchmark execution times:
-                        copystream: 0.08s
-                       writestream: 0.42s
-    ----------------------------------------------------------------------
-    NullExecuteManyBenchmark execution times:
-                       executemany: 15.79s
-    ----------------------------------------------------------------------
-    Ran 6 tests in 38.473s
+    Ran 6 tests in 38.487s
 
 
 

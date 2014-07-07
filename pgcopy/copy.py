@@ -8,7 +8,6 @@ import threading
 
 from cStringIO import StringIO
 from datetime import date
-from timeit import default_timer
 
 from . import inspect, util
 
@@ -78,7 +77,6 @@ class CopyManager(object):
         self.table = table
         self.cols = cols
         self.compile()
-        self.times = {}
 
     def compile(self):
         self.formatters = []
@@ -114,7 +112,6 @@ class CopyManager(object):
         copy_thread.join()
 
     def writestream(self, data, datastream):
-        start = default_timer()
         datastream.write(BINCOPY_HEADER)
         count = len(self.cols)
         for record in data:
@@ -126,10 +123,8 @@ class CopyManager(object):
                 rdat.extend(d)
             datastream.write(struct.pack(''.join(fmt), *rdat))
         datastream.write(BINCOPY_TRAILER)
-        self.times['writestream'] = default_timer() - start
 
     def copystream(self, datastream):
-        start = default_timer()
         columns = '", "'.join(self.cols)
         sql = """COPY "{0}" ("{1}")
                 FROM STDIN WITH BINARY""".format(self.table, columns)
@@ -139,5 +134,4 @@ class CopyManager(object):
         except Exception, e:
             message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
             raise type(e), type(e)(message), sys.exc_info()[2]
-        self.times['copystream'] = default_timer() - start
 
