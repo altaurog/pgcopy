@@ -39,6 +39,9 @@ class Benchmark(db.TemporaryTable):
         for name, elapsed_time in results:
             print "%30s: %.2fs" % (name, elapsed_time)
 
+class NullBenchmark(Benchmark):
+    null = 'NULL'
+
 class ExecuteManyBenchmark(Benchmark):
     def benchmark(self):
         cols = ','.join(self.cols)
@@ -52,6 +55,9 @@ class ExecuteManyBenchmark(Benchmark):
         self.check_count()
         self.print_results([('executemany', elapsed)])
 
+class NullExecuteManyBenchmark(ExecuteManyBenchmark):
+    null = 'NULL'
+
 try:
     from pgcopy import ccopy
 
@@ -60,5 +66,9 @@ try:
         def do_copy(self, mgr):
             df = self.dataframe()
             mgr.copy(df)
+
+    class NullCythonBenchmark(CythonBenchmark):
+        null = 'NULL'
+
 except ImportError:
     pass
