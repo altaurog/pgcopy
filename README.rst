@@ -54,8 +54,6 @@ data from a pandas_ DataFrame::
     mgr = CopyManager(conn, 'measurements', cols)
     mgr.copy(df)
 
-``text`` and ``bytea`` types are not supported with the optimized backend.
-
 Supported datatypes
 -------------------
 
@@ -74,6 +72,8 @@ Currently the following PostgreSQL datatypes are supported:
 * date
 * timestamp
 * timestamp with time zone
+
+``text`` and ``bytea`` types are not supported with the optimized backend.
 
 Benchmarks
 -----------
