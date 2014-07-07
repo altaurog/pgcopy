@@ -35,6 +35,12 @@ For example::
     mgr = CopyManager(conn, 'measurements', cols)
     mgr.copy(records)
 
+By default, a temporary file on disk is used.  If there's enough memory,
+you can get a slight performance benefit with in-memory storage::
+
+    from cStringIO import StringIO
+    mgr.copy(records, StringIO)
+
 There is also an optimized ``CopyManager`` written in Cython_ for inserting
 data from a pandas_ DataFrame::
 

@@ -6,7 +6,6 @@ import sys
 import tempfile
 import threading
 
-from cStringIO import StringIO
 from datetime import date
 
 from . import inspect, util
@@ -94,8 +93,8 @@ class CopyManager(object):
                 f = null(f)
             self.formatters.append(f)
 
-    def copy(self, data):
-        datastream = tempfile.TemporaryFile()
+    def copy(self, data, fobject_factory=tempfile.TemporaryFile):
+        datastream = fobject_factory()
         self.writestream(data, datastream)
         datastream.seek(0)
         self.copystream(datastream)
