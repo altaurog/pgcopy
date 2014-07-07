@@ -25,7 +25,7 @@ setup(
     name = package_name,
     version = get_version(package_name),
     description = "Fast db insert with postgresql binary copy",
-    long_description = read("README.rst"),
+    long_description = read("README.rst") + '\n\n' + read("CHANGELOG.txt"),
     author = "Aryeh Leib Taurog",
     author_email = "python@aryehleib.com",
     license = 'MIT',
@@ -35,7 +35,7 @@ setup(
     install_requires = ["psycopg2"],
     classifiers = [
         "Programming Language :: Python",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",

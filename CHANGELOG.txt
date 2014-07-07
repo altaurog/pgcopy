@@ -1,5 +1,14 @@
+Changelog
+-----------
+
+0.2
+"""
+:date: 7 Jul, 2014
+
+*  Cython optimization
+
 0.1
-----
+"""
 :date: 29 Jun, 2014
 
 *  Initial version
