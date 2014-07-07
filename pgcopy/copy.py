@@ -10,9 +10,6 @@ from cStringIO import StringIO
 from datetime import date
 from timeit import default_timer
 
-import pyximport
-pyximport.install()
-from pgcopy import ccopy
 from . import inspect, util
 
 __all__ = ['CopyManager']
@@ -115,14 +112,6 @@ class CopyManager(object):
         self.writestream(data, wstream)
         wstream.close()
         copy_thread.join()
-
-    def copy_dataframe(self, df):
-        with open('copydata.tmp', 'w+b') as f:
-            start = default_timer()
-            ccopy.write_dataframe(f.fileno(), df)
-            self.times['writestream'] = default_timer() - start
-            f.seek(0)
-            self.copystream(f)
 
     def writestream(self, data, datastream):
         start = default_timer()
