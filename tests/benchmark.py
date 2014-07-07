@@ -1,10 +1,10 @@
-import time
+import pandas as pd
+from timeit import default_timer
 from pgcopy import CopyManager
 from . import db
 
 class Benchmark(db.TemporaryTable):
     manager = CopyManager
-    method = 'copy'
     record_count = 100000
     datatypes = [
             'integer',
@@ -14,8 +14,12 @@ class Benchmark(db.TemporaryTable):
             'bool',
         ]
 
+    def dataframe(self):
+        df = pd.DataFrame(self.data, columns=self.cols)
+        return df
+
     def do_copy(self, mgr):
-        getattr(mgr, self.method)(self.data)
+        mgr.copy(self.dataframe().itertuples(False))
 
     def check_count(self):
         cursor = self.conn.cursor()
@@ -35,11 +39,6 @@ class Benchmark(db.TemporaryTable):
         for name, elapsed_time in results:
             print "%30s: %.2fs" % (name, elapsed_time)
 
-
-class ThreadingBenchmark(Benchmark):
-    method = 'threading_copy'
-    manager = CopyManager
-
 class ExecuteManyBenchmark(Benchmark):
     def benchmark(self):
         cols = ','.join(self.cols)
@@ -47,9 +46,21 @@ class ExecuteManyBenchmark(Benchmark):
         sql = "INSERT INTO %s (%s) VALUES (%s)" \
                 % (self.table, cols, paramholders)
         cursor = self.conn.cursor()
-        start = time.time()
+        start = default_timer()
         cursor.executemany(sql, self.data)
-        elapsed = time.time() - start
+        elapsed = default_timer() - start
         self.check_count()
         self.print_results([('executemany', elapsed)])
 
+try:
+    import pyximport
+    pyximport.install()
+    from pgcopy import ccopy
+
+    class CythonBenchmark(Benchmark):
+        manager = ccopy.CopyManager
+        def do_copy(self, mgr):
+            df = self.dataframe()
+            mgr.copy(df)
+except ImportError:
+    pass
