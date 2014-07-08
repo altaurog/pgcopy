@@ -1,9 +1,8 @@
-import pandas as pd
 from timeit import default_timer
 from pgcopy import CopyManager
 from . import db
 
-class Benchmark(db.TemporaryTable):
+class PGCopyBenchmark(db.TemporaryTable):
     record_count = 100000
     datatypes = [
             'integer',
@@ -13,13 +12,9 @@ class Benchmark(db.TemporaryTable):
             'bool',
         ]
 
-    def dataframe(self):
-        df = pd.DataFrame(self.data, columns=self.cols)
-        return df
-
     def do_copy(self):
         mgr = CopyManager(self.conn, self.table, self.cols)
-        mgr.copy(self.dataframe().itertuples(False))
+        mgr.copy(self.data)
 
     def check_count(self):
         cursor = self.conn.cursor()
@@ -34,13 +29,10 @@ class Benchmark(db.TemporaryTable):
         self.check_count()
 
     def tearDown(self):
-        super(Benchmark, self).tearDown()
+        super(PGCopyBenchmark, self).tearDown()
         print "%30s: %6.02fs" % (self.__class__.__name__, self.elapsed_time)
 
-class NullBenchmark(Benchmark):
-    null = 'NULL'
-
-class ExecuteManyBenchmark(Benchmark):
+class ExecuteManyBenchmark(PGCopyBenchmark):
     def do_copy(self):
         cols = ','.join(self.cols)
         paramholders = ','.join(['%s'] * len(self.cols))
@@ -48,20 +40,3 @@ class ExecuteManyBenchmark(Benchmark):
                 % (self.table, cols, paramholders)
         cursor = self.conn.cursor()
         cursor.executemany(sql, self.data)
-
-class NullExecuteManyBenchmark(ExecuteManyBenchmark):
-    null = 'NULL'
-
-try:
-    from pgcopy import ccopy
-
-    class CythonBenchmark(Benchmark):
-        def do_copy(self):
-            mgr = ccopy.CopyManager(self.conn, self.table, self.cols)
-            mgr.copy(self.dataframe())
-
-    class NullCythonBenchmark(CythonBenchmark):
-        null = 'NULL'
-
-except ImportError:
-    pass

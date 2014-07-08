@@ -40,20 +40,3 @@ class Sanity(db.TemporaryTable):
             '\nc81e728d9d\x00\x00\x00\x01'
             '\x00\xff\xff'
         )
-
-try:
-    import pandas as pd
-    from pgcopy import ccopy
-
-    class CSanity(Sanity):
-        def sanity(self):
-            fname = 'copydata.tmp'
-            mgr = ccopy.manager(self.conn, self.table, self.cols)
-            df = pd.DataFrame(self.data, columns=self.cols)
-            with open(fname, 'w+b') as f:
-                mgr.write_dataframe(f.fileno(), df)
-                f.seek(0)
-                self.assertCorrect(f.read())
-
-except ImportError:
-    pass
