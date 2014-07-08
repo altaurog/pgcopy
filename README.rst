@@ -88,8 +88,14 @@ used so::
         mgr = CopyManager(conn, temp_name, cols)
         mgr.copy(records)
 
+See Also
+--------
+
+cpgcopy_, a Cython implementation, about twice as fast.
+
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2/
 .. _pytz: https://pypi.python.org/pypi/pytz/
 .. _nose: https://pypi.python.org/pypi/nose/
+.. _cpgcopy: https://bitbucket.org/altaurog/cpgcopy
