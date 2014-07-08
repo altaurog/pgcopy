@@ -18,7 +18,7 @@ class Replace(object):
     Instead of executemany("UPDATE ..."), create and populate
     a new table (which can be done using COPY), then rename.
 
-    Won't work if table is referred to by constraints on other tables
+    Can do this only if no other objects in the db depend on the table.
 
     See http://dba.stackexchange.com/a/41111/9941
     """
@@ -27,6 +27,7 @@ class Replace(object):
         self.uuid = uuid.uuid1()
         self.table = table
         self.temp_name = self.mangle(table)
+        self.name_re = re.compile(r'\b%s\b' % re.escape(self.table))
         self.inspect()
 
     def __enter__(self):
@@ -37,6 +38,8 @@ class Replace(object):
         if exc_type is None:
             self.create_notnull()
             self.create_constraints()
+            self.create_indices()
+            self.create_triggers()
             self.swap()
         self.cursor.close()
 
@@ -48,14 +51,33 @@ class Replace(object):
             """
         self.cursor.execute(attquery, (self.table,))
         self.notnull = [an for (an,) in self.cursor]
+        # primary key is recreated as a constraint, 
+        # but all other unique constraints are only
+        # recreated as unique index
         conquery = """
             SELECT conname, pg_catalog.pg_get_constraintdef(r.oid, true)
             FROM pg_catalog.pg_constraint r
             JOIN pg_class c ON r.conrelid = c.oid
-            WHERE c.relname = %s
+            WHERE c.relname = %s AND contype != 'u'
             """
         self.cursor.execute(conquery, (self.table,))
         self.constraints = self.cursor.fetchall()
+        indquery = """
+            SELECT pg_get_indexdef(indexrelid)
+            FROM pg_index
+            WHERE indrelid = %s::regclass
+            AND NOT indisprimary
+            """
+        self.cursor.execute(indquery, (self.table,))
+        self.indices = [i for (i,) in self.cursor.fetchall()]
+        trigquery = """
+            SELECT pg_get_triggerdef(oid)
+            FROM pg_trigger
+            WHERE tgrelid=%s::regclass
+            AND NOT tgisconstraint
+            """
+        self.cursor.execute(trigquery, (self.table,))
+        self.triggers = [t for (t,) in self.cursor.fetchall()]
 
     def create_temp(self):
         create = 'CREATE TABLE "%s" AS TABLE "%s" WITH NO DATA'
@@ -72,6 +94,14 @@ class Replace(object):
             newname = self.mangle(conname)
             self.cursor.execute(consql % (self.temp_name, newname, condef))
 
+    def create_indices(self):
+        for indexsql in self.indices:
+            self.cursor.execute(self.sqlrename(indexsql))
+
+    def create_triggers(self):
+        for trigsql in self.triggers:
+            self.cursor.execute(self.sqlrename(trigsql))
+
     def swap(self):
         self.cursor.execute('DROP TABLE "%s"' % self.table)
         self.cursor.execute('ALTER TABLE "%s" RENAME TO %s'
@@ -80,3 +110,8 @@ class Replace(object):
     unsafe_re = re.compile(r'\W+')
     def mangle(self, name):
         return self.unsafe_re.sub('', '%s%s' % (name, self.uuid))
+
+    def sqlrename(self, sql):
+        return self.name_re.sub(self.temp_name, sql)
+
+

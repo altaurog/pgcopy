@@ -41,18 +41,20 @@ you can get a slight performance benefit with in-memory storage::
     from cStringIO import StringIO
     mgr.copy(records, StringIO)
 
-There is also an optimized ``CopyManager`` written in Cython_ for inserting
-data from a pandas_ DataFrame::
+Replacing a Table
+------------------
 
-    import numpy as np
-    import pandas as pd
-    import psycopg2
-    from pgcopy import ccopy
-    cols = ('a', 'b', 'c')
-    df = pd.DataFrame(np.random.randn(500, 3), columns=cols)
-    conn = psycopg2.connect(database='weather')
-    mgr = CopyManager(conn, 'measurements', cols)
-    mgr.copy(df)
+When possible, faster insertion may be realized by inserting into an empty
+table with no indices or constraints.  In a case where the entire contents
+of the table can be reinserted, the ``Replace`` class automates the
+creation of a new table, the recreation of constraints, indices, and
+triggers, and the replacement of the old table with the new::
+
+    from pgcopy import CopyManager, Replace
+    with Replace(conn, 'mytable') as temp_name:
+        mgr = CopyManager(conn, temp_name, cols)
+        mgr.copy(records)
+
 
 Supported datatypes
 -------------------
@@ -73,8 +75,6 @@ Currently the following PostgreSQL datatypes are supported:
 * timestamp
 * timestamp with time zone
 
-``text`` and ``bytea`` types are not supported with the optimized backend.
-
 Benchmarks
 -----------
 
@@ -83,16 +83,10 @@ This gives a general idea of the kind of speedup
 available with pgcopy::
 
     $ nosetests -c tests/benchmark.cfg 
-                         Benchmark:   1.07s
-                   CythonBenchmark:   0.46s
-              ExecuteManyBenchmark:  15.85s
-                     NullBenchmark:   1.13s
-               NullCythonBenchmark:   0.51s
-          NullExecuteManyBenchmark:  15.87s
+              ExecuteManyBenchmark:   7.75s
+                   PGCopyBenchmark:   0.54s
     ----------------------------------------------------------------------
-    Ran 6 tests in 38.487s
-
-
+    Ran 2 tests in 9.101s
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2/
