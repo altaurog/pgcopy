@@ -10,7 +10,7 @@ Installation
 pgcopy requires pytz_ and the psycopg2_ db adapter.
 nose_ is required to run the tests.
 
-Basic use
+Use
 ---------
 
 pgcopy provides facility for copying data from an iterable of tuple-like
@@ -40,21 +40,6 @@ you can get a slight performance benefit with in-memory storage::
 
     from cStringIO import StringIO
     mgr.copy(records, StringIO)
-
-Replacing a Table
-------------------
-
-When possible, faster insertion may be realized by inserting into an empty
-table with no indices or constraints.  In a case where the entire contents
-of the table can be reinserted, the ``Replace`` class automates the
-creation of a new table, the recreation of constraints, indices, and
-triggers, and the replacement of the old table with the new::
-
-    from pgcopy import CopyManager, Replace
-    with Replace(conn, 'mytable') as temp_name:
-        mgr = CopyManager(conn, temp_name, cols)
-        mgr.copy(records)
-
 
 Supported datatypes
 -------------------
@@ -87,6 +72,22 @@ available with pgcopy::
                    PGCopyBenchmark:   0.54s
     ----------------------------------------------------------------------
     Ran 2 tests in 9.101s
+
+Replacing a Table
+------------------
+
+When possible, faster insertion may be realized by inserting into an empty
+table with no indices or constraints.  In a case where the entire contents
+of the table can be reinserted, the ``Replace`` class automates the
+creation of a new table, the recreation of constraints, indices, and
+triggers, and the replacement of the old table with the new.  It can be
+used so::
+
+    from pgcopy import CopyManager, Replace
+    with Replace(conn, 'mytable') as temp_name:
+        mgr = CopyManager(conn, temp_name, cols)
+        mgr.copy(records)
+
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2/
