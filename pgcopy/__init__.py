@@ -1,2 +1,3 @@
 __version__ = '0.2'
-from .copy import *
+from .copy import CopyManager
+from .util import Replace
