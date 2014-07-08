@@ -109,7 +109,8 @@ class Replace(object):
 
     unsafe_re = re.compile(r'\W+')
     def mangle(self, name):
-        return self.unsafe_re.sub('', '%s%s' % (name, self.uuid))
+        base = '%s%s' % (name, self.uuid)
+        return self.unsafe_re.sub('', base).lower()
 
     def sqlrename(self, sql):
         return self.name_re.sub(self.temp_name, sql)
