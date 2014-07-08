@@ -1,6 +1,13 @@
 Changelog
 -----------
 
+0.3
+"""
+:date: 8 Jul, 2014
+
+*  Move Cython optimization to separate project
+*  Add ``Replace`` utility class
+
 0.2
 """
 :date: 7 Jul, 2014
