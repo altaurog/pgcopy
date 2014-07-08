@@ -45,9 +45,10 @@ class Replace(object):
 
     def inspect(self):
         attquery = """
-            SELECT a.attname FROM pg_attribute a
-            JOIN pg_class c ON a.attrelid = c.oid
-            WHERE c.relname = %s AND a.attnum > 0 AND a.attnotnull
+            SELECT attname
+            FROM pg_catalog.pg_attribute
+            WHERE attrelid = %s::regclass
+            AND attnum > 0 AND attnotnull
             """
         self.cursor.execute(attquery, (self.table,))
         self.notnull = [an for (an,) in self.cursor]
@@ -55,24 +56,23 @@ class Replace(object):
         # but all other unique constraints are only
         # recreated as unique index
         conquery = """
-            SELECT conname, pg_catalog.pg_get_constraintdef(r.oid, true)
-            FROM pg_catalog.pg_constraint r
-            JOIN pg_class c ON r.conrelid = c.oid
-            WHERE c.relname = %s AND contype != 'u'
+            SELECT conname, pg_catalog.pg_get_constraintdef(oid)
+            FROM pg_catalog.pg_constraint
+            WHERE conrelid = %s::regclass AND contype != 'u'
             """
         self.cursor.execute(conquery, (self.table,))
         self.constraints = self.cursor.fetchall()
         indquery = """
-            SELECT pg_get_indexdef(indexrelid)
-            FROM pg_index
+            SELECT pg_catalog.pg_get_indexdef(indexrelid)
+            FROM pg_catalog.pg_index
             WHERE indrelid = %s::regclass
             AND NOT indisprimary
             """
         self.cursor.execute(indquery, (self.table,))
         self.indices = [i for (i,) in self.cursor.fetchall()]
         trigquery = """
-            SELECT pg_get_triggerdef(oid)
-            FROM pg_trigger
+            SELECT pg_catalog.pg_get_triggerdef(oid)
+            FROM pg_catalog.pg_trigger
             WHERE tgrelid=%s::regclass
             AND NOT tgisconstraint
             """
