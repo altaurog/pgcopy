@@ -10,7 +10,7 @@ def read(filename):
 
 def get_version(package_name, default='0.1'):
     try:
-        f = open(join(base_dir, package_name, '__init__.py'))
+        f = open(join(base_dir, package_name, 'version.py'))
     except IOError:
         try:
             f = open(join(base_dir, package_name + '.py'))
