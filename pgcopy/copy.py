@@ -40,7 +40,7 @@ def timestamp(dt):
     unix_timestamp = calendar.timegm(dt.timetuple())
     # timetuple doesn't maintain microseconds
     # see http://stackoverflow.com/a/14369386/519015
-    val = ((unix_timestamp - psql_epoch) * 1e6) + dt.microsecond
+    val = ((unix_timestamp - psql_epoch) * 1000000) + dt.microsecond
     return ('iq', (8, val))
 
 def datestamp(d):
