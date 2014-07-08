@@ -30,7 +30,7 @@ setup(
     license = 'MIT',
     url = "http://bitbucket.org/altaurog/pgcopy",
     packages = [package_name],
-    install_requires = ["psycopg2"],
+    install_requires = ["psycopg2", "pytz"],
     classifiers = [
         "Programming Language :: Python",
         "Development Status :: 4 - Beta",
