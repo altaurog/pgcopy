@@ -41,6 +41,7 @@ class Replace(object):
             self.create_indices()
             self.create_triggers()
             self.swap()
+            self.create_views()
         self.cursor.close()
 
     def inspect(self):
@@ -78,6 +79,15 @@ class Replace(object):
             """
         self.cursor.execute(trigquery, (self.table,))
         self.triggers = [t for (t,) in self.cursor.fetchall()]
+        viewquery = """
+            SELECT DISTINCT c.relname, pg_get_viewdef(r.ev_class)
+            FROM pg_rewrite r
+            JOIN pg_depend d ON d.objid = r.oid 
+            JOIN pg_class c ON c.oid = r.ev_class
+            WHERE d.refobjid = %s::regclass;
+            """
+        self.cursor.execute(viewquery, (self.table,))
+        self.views = self.cursor.fetchall()
 
     def create_temp(self):
         create = 'CREATE TABLE "%s" AS TABLE "%s" WITH NO DATA'
@@ -103,9 +113,14 @@ class Replace(object):
             self.cursor.execute(self.sqlrename(trigsql))
 
     def swap(self):
-        self.cursor.execute('DROP TABLE "%s"' % self.table)
+        self.cursor.execute('DROP TABLE "%s" CASCADE' % self.table)
         self.cursor.execute('ALTER TABLE "%s" RENAME TO %s'
                             % (self.temp_name, self.table))
+
+    def create_views(self):
+        viewsql = 'CREATE VIEW "%s" AS %s'
+        for viewname, viewdef in self.views:
+            self.cursor.execute(viewsql % (viewname, viewdef))
 
     unsafe_re = re.compile(r'\W+')
     def mangle(self, name):
