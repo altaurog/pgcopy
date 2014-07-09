@@ -28,11 +28,11 @@ For example::
     now = datetime.now()
     records = [
             (0, now, 'Jerusalem', 72.2),
-            (0, now, 'New York', 75.6),
-            (0, now, 'Moscow', 54.3),
+            (1, now, 'New York', 75.6),
+            (2, now, 'Moscow', 54.3),
         ]
-    conn = psycopg2.connect(database='weather')
-    mgr = CopyManager(conn, 'measurements', cols)
+    conn = psycopg2.connect(database='weather_db')
+    mgr = CopyManager(conn, 'measurements_table', cols)
     mgr.copy(records)
 
 By default, a temporary file on disk is used.  If there's enough memory,
