@@ -74,7 +74,7 @@ class Replace(object):
             SELECT pg_catalog.pg_get_triggerdef(oid)
             FROM pg_catalog.pg_trigger
             WHERE tgrelid=%s::regclass
-            AND NOT tgisconstraint
+            AND tgconstraint = 0
             """
         self.cursor.execute(trigquery, (self.table,))
         self.triggers = [t for (t,) in self.cursor.fetchall()]
