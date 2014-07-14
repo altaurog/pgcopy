@@ -80,10 +80,10 @@ When possible, faster insertion may be realized by inserting into an empty
 table with no indices or constraints.  In a case where the entire contents
 of the table can be reinserted, the ``Replace`` context manager automates
 the process.  On entry, it creates a new table like the original, with a
-temporary name.  It provides the temporary name for populating the table
-within the context.  On exit, it recreates the constraints, indices, 
-triggers, and views on the new table, then replaces the old table with the
-new.  It can be used so::
+temporary name.  Default column values are included.  It provides the
+temporary name for populating the table within the context.  On exit, it
+recreates the constraints, indices, triggers, and views on the new table,
+then replaces the old table with the new.  It can be used so::
 
     from pgcopy import CopyManager, Replace
     with Replace(conn, 'mytable') as temp_name:

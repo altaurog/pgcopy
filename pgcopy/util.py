@@ -44,6 +44,7 @@ class Replace(object):
 
     def __enter__(self):
         self.create_temp()
+        self.create_defaults()
         return self.temp_name
 
     def __exit__(self, exc_type, exc, tb):
@@ -57,6 +58,24 @@ class Replace(object):
         self.cursor.close()
 
     def inspect(self):
+        defquery = """
+            SELECT attname, pg_get_expr(adbin, adrelid)
+            FROM pg_attribute
+            JOIN pg_attrdef ON attrelid = adrelid AND adnum = attnum
+            WHERE adnum > 0
+            AND attrelid = %s::regclass;
+            """
+        self.cursor.execute(defquery, (self.table,))
+        self.defaults = self.cursor.fetchall()
+        seqquery = """
+            SELECT attname, relname FROM pg_class
+            JOIN pg_depend ON (objid = pg_class.oid)
+            JOIN pg_attribute ON (attnum=refobjsubid AND attrelid=refobjid)
+            WHERE relkind = 'S'
+            AND refobjid = %s::regclass
+            """
+        self.cursor.execute(seqquery, (self.table,))
+        self.sequences = self.cursor.fetchall()
         attquery = """
             SELECT attname
             FROM pg_catalog.pg_attribute
@@ -106,6 +125,11 @@ class Replace(object):
         create = 'CREATE TABLE "%s" AS TABLE "%s" WITH NO DATA'
         self.cursor.execute(create % (self.temp_name, self.table))
 
+    def create_defaults(self):
+        defsql = 'ALTER TABLE "%s" ALTER COLUMN "%s" SET DEFAULT %s'
+        for col, default in self.defaults:
+            self.cursor.execute(defsql % (self.temp_name, col, default))
+
     def create_notnull(self):
         nnsql = 'ALTER TABLE "%s" ALTER COLUMN "%s" SET NOT NULL'
         for col in self.notnull:
@@ -138,6 +162,12 @@ class Replace(object):
     def swap(self):
         for view, viewdef in self.views:
             self.cursor.execute('DROP VIEW "%s"' % view)
+        dropdefsql = 'ALTER TABLE "%s" ALTER COLUMN "%s" DROP DEFAULT'
+        for col, default in self.defaults:
+            self.cursor.execute(dropdefsql % (self.table, col))
+        seqownersql = 'ALTER SEQUENCE "%s" OWNED BY "%s"."%s"'
+        for col, seq in self.sequences:
+            self.cursor.execute(seqownersql % (seq, self.temp_name, col))
         self.cursor.execute('DROP TABLE "%s"' % self.table)
         sql = 'ALTER %s "%s" RENAME TO "%s"'
         for rename in self.rename:

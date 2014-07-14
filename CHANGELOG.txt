@@ -1,5 +1,11 @@
 Changelog
 -----------
+0.5
+"""
+:date: 14 Jul, 2014
+
+* Support default values and sequences
+
 0.4
 """
 :date: 14 Jul, 2014
