@@ -1,5 +1,6 @@
 import re
-import uuid
+import random
+import string
 from datetime import datetime
 from pytz import UTC
 
@@ -10,6 +11,11 @@ def to_utc(dt):
         return UTC.localize(dt)
     else:
         return dt.astimezone(UTC)
+
+source = string.ascii_lowercase + string.digits
+def uid():
+    vals = [random.choice(source) for i in range(5)]
+    return ''.join(vals)
 
 
 idre = lambda name: re.compile(r'\b%s\b' % re.escape(name))
@@ -26,7 +32,7 @@ class Replace(object):
     """
     def __init__(self, connection, table):
         self.cursor = connection.cursor()
-        self.uuid = str(uuid.uuid1()).replace('-', '')
+        self.uid = uid()
         self.table = table
         self.name_re = idre(table)
         self.temp_name = self.newname()
@@ -152,7 +158,7 @@ class Replace(object):
             parts.append('%02d')
             vals.append(i)
         parts.append('%s')
-        vals.append(self.uuid)
+        vals.append(self.uid)
         return self.unsafe_re.sub('', '_'.join(parts) % tuple(vals)).lower()
 
     def sqlrename(self, sql, *args):
