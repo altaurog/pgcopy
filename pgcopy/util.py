@@ -12,22 +12,25 @@ def to_utc(dt):
         return dt.astimezone(UTC)
 
 
+idre = lambda name: re.compile(r'\b%s\b' % re.escape(name))
+
 class Replace(object):
     """
     Utility for fast updates on table involving most rows in the table.
     Instead of executemany("UPDATE ..."), create and populate
     a new table (which can be done using COPY), then rename.
 
-    Can do this only if no other objects in the db depend on the table.
+    Can do this only if no other tables in the db depend on the table.
 
     See http://dba.stackexchange.com/a/41111/9941
     """
     def __init__(self, connection, table):
         self.cursor = connection.cursor()
-        self.uuid = uuid.uuid1()
+        self.uuid = str(uuid.uuid1()).replace('-', '')
         self.table = table
-        self.temp_name = self.mangle(table)
-        self.name_re = re.compile(r'\b%s\b' % re.escape(self.table))
+        self.name_re = idre(table)
+        self.temp_name = self.newname()
+        self.rename = [('TABLE', self.temp_name, table)]
         self.inspect()
 
     def __enter__(self):
@@ -57,32 +60,33 @@ class Replace(object):
         # but all other unique constraints are only
         # recreated as unique index
         conquery = """
-            SELECT conname, pg_catalog.pg_get_constraintdef(oid)
+            SELECT DISTINCT pg_catalog.pg_get_constraintdef(oid)
             FROM pg_catalog.pg_constraint
             WHERE conrelid = %s::regclass AND contype != 'u'
             """
         self.cursor.execute(conquery, (self.table,))
-        self.constraints = self.cursor.fetchall()
+        self.constraints = [cd for (cd,) in self.cursor.fetchall()]
         indquery = """
-            SELECT pg_catalog.pg_get_indexdef(indexrelid)
-            FROM pg_catalog.pg_index
-            WHERE indrelid = %s::regclass
-            AND NOT indisprimary
+            SELECT c.relname, pg_catalog.pg_get_indexdef(i.indexrelid)
+            FROM pg_catalog.pg_index i
+            JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+            WHERE NOT indisprimary
+            AND indrelid = %s::regclass
             """
         self.cursor.execute(indquery, (self.table,))
-        self.indices = [i for (i,) in self.cursor.fetchall()]
+        self.indices = self.cursor.fetchall()
         trigquery = """
-            SELECT pg_catalog.pg_get_triggerdef(oid)
+            SELECT tgname, pg_catalog.pg_get_triggerdef(oid)
             FROM pg_catalog.pg_trigger
-            WHERE tgrelid=%s::regclass
-            AND tgconstraint = 0
+            WHERE tgconstraint = 0
+            AND tgrelid=%s::regclass
             """
         self.cursor.execute(trigquery, (self.table,))
-        self.triggers = [t for (t,) in self.cursor.fetchall()]
+        self.triggers = self.cursor.fetchall()
         viewquery = """
             SELECT DISTINCT c.relname, pg_get_viewdef(r.ev_class)
             FROM pg_rewrite r
-            JOIN pg_depend d ON d.objid = r.oid 
+            JOIN pg_depend d ON d.objid = r.oid
             JOIN pg_class c ON c.oid = r.ev_class
             WHERE d.refobjid = %s::regclass;
             """
@@ -100,34 +104,60 @@ class Replace(object):
 
     def create_constraints(self):
         consql = 'ALTER TABLE "%s" ADD CONSTRAINT "%s" %s'
-        for conname, condef in self.constraints:
-            newname = self.mangle(conname)
-            self.cursor.execute(consql % (self.temp_name, newname, condef))
+        for i, condef in enumerate(self.constraints):
+            conname = self.newname('con', i)
+            self.cursor.execute(consql % (self.temp_name, conname, condef))
 
     def create_indices(self):
-        for indexsql in self.indices:
-            self.cursor.execute(self.sqlrename(indexsql))
+        for i, (oldidxname, indexsql) in enumerate(self.indices):
+            newidxname = self.newname('idx', i)
+            newsql = self.sqlrename(indexsql, oldidxname, newidxname)
+            self.cursor.execute(newsql)
+            self.rename.append(('INDEX', newidxname, oldidxname))
 
     def create_triggers(self):
-        for trigsql in self.triggers:
-            self.cursor.execute(self.sqlrename(trigsql))
+        for i, (oldtrigname, trigsql) in enumerate(self.triggers):
+            newtrigname = self.newname('tg', i)
+            newsql = self.sqlrename(trigsql, oldtrigname, newtrigname)
+            self.cursor.execute(newsql)
+            self.rename.append(('TRIGGER',
+                                '%s" ON "%s' % (newtrigname, self.table),
+                                oldtrigname))
 
     def swap(self):
-        self.cursor.execute('DROP TABLE "%s" CASCADE' % self.table)
-        self.cursor.execute('ALTER TABLE "%s" RENAME TO %s'
-                            % (self.temp_name, self.table))
+        for view, viewdef in self.views:
+            self.cursor.execute('DROP VIEW "%s"' % view)
+        self.cursor.execute('DROP TABLE "%s"' % self.table)
+        sql = 'ALTER %s "%s" RENAME TO "%s"'
+        for rename in self.rename:
+            self.cursor.execute(sql % rename)
 
     def create_views(self):
         viewsql = 'CREATE VIEW "%s" AS %s'
-        for viewname, viewdef in self.views:
-            self.cursor.execute(viewsql % (viewname, viewdef))
+        for view in self.views:
+            sql = viewsql % view
+            self.cursor.execute(sql)
+
 
     unsafe_re = re.compile(r'\W+')
-    def mangle(self, name):
-        base = '%s%s' % (name, self.uuid)
-        return self.unsafe_re.sub('', base).lower()
+    def newname(self, pre=None, i=None):
+        parts = ['%s']
+        vals = [self.table]
+        if pre is not None:
+            parts.append('%s')
+            vals.append(pre)
+        if i is not None:
+            parts.append('%02d')
+            vals.append(i)
+        parts.append('%s')
+        vals.append(self.uuid)
+        return self.unsafe_re.sub('', '_'.join(parts) % tuple(vals)).lower()
 
-    def sqlrename(self, sql):
-        return self.name_re.sub(self.temp_name, sql)
-
-
+    def sqlrename(self, sql, *args):
+        newsql = self.name_re.sub(self.temp_name, sql)
+        try:
+            old, new = args
+        except ValueError:
+            return newsql
+        else:
+            return idre(old).sub(new, newsql)
