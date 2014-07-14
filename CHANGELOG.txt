@@ -1,5 +1,11 @@
 Changelog
 -----------
+0.4
+"""
+:date: 14 Jul, 2014
+
+* Fix ``Replace`` utility class bugs
+* Add view support to ``Replace``
 
 0.3
 """
