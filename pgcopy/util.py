@@ -60,12 +60,12 @@ class Replace(object):
         # but all other unique constraints are only
         # recreated as unique index
         conquery = """
-            SELECT DISTINCT pg_catalog.pg_get_constraintdef(oid)
+            SELECT DISTINCT contype, conname, pg_catalog.pg_get_constraintdef(oid)
             FROM pg_catalog.pg_constraint
             WHERE conrelid = %s::regclass AND contype != 'u'
             """
         self.cursor.execute(conquery, (self.table,))
-        self.constraints = [cd for (cd,) in self.cursor.fetchall()]
+        self.constraints = self.cursor.fetchall()
         indquery = """
             SELECT c.relname, pg_catalog.pg_get_indexdef(i.indexrelid)
             FROM pg_catalog.pg_index i
@@ -104,9 +104,11 @@ class Replace(object):
 
     def create_constraints(self):
         consql = 'ALTER TABLE "%s" ADD CONSTRAINT "%s" %s'
-        for i, condef in enumerate(self.constraints):
-            conname = self.newname('con', i)
-            self.cursor.execute(consql % (self.temp_name, conname, condef))
+        for i, (contype, conname, condef) in enumerate(self.constraints):
+            newname = self.newname('con', i)
+            self.cursor.execute(consql % (self.temp_name, newname, condef))
+            if 'p' == contype:
+                self.rename.append(('INDEX', newname, conname))
 
     def create_indices(self):
         for i, (oldidxname, indexsql) in enumerate(self.indices):
