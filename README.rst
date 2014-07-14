@@ -81,14 +81,22 @@ table with no indices or constraints.  In a case where the entire contents
 of the table can be reinserted, the ``Replace`` context manager automates
 the process.  On entry, it creates a new table like the original, with a
 temporary name.  It provides the temporary name for populating the table
-within the context.  On exit, it recreates the constraints, indices, and
-triggers on the new table, then replaces the old table with the new.
-It can be used so::
+within the context.  On exit, it recreates the constraints, indices, 
+triggers, and views on the new table, then replaces the old table with the
+new.  It can be used so::
 
     from pgcopy import CopyManager, Replace
     with Replace(conn, 'mytable') as temp_name:
         mgr = CopyManager(conn, temp_name, cols)
         mgr.copy(records)
+
+``Replace`` renames new db objects like the old, where possible.
+Names of foreign key and check constraints will be mangled.
+
+Note that on PostgreSQL 9.1 and earlier, concurrent queries on the table
+`will fail`_ once the table is dropped.
+
+.. _will fail: https://gist.github.com/altaurog/ab0019837719d2a93e6b
 
 See Also
 --------

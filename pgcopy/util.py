@@ -28,6 +28,9 @@ class Replace(object):
 
     Can do this only if no other tables in the db depend on the table.
 
+    NOTE: With PostgreSQL < 9.3 after the table is dropped attempts to
+    query it will fail.
+
     See http://dba.stackexchange.com/a/41111/9941
     """
     def __init__(self, connection, table):
