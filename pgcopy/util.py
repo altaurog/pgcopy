@@ -160,15 +160,30 @@ class Replace(object):
                                 oldtrigname))
 
     def swap(self):
+        self.drop_views()
+        self.drop_defaults()
+        self.move_sequences()
+        self.drop_original_table()
+        self.rename_temp_table()
+
+    def drop_views(self):
         for view, viewdef in self.views:
             self.cursor.execute('DROP VIEW "%s"' % view)
+
+    def drop_defaults(self):
         dropdefsql = 'ALTER TABLE "%s" ALTER COLUMN "%s" DROP DEFAULT'
         for col, default in self.defaults:
             self.cursor.execute(dropdefsql % (self.table, col))
+
+    def move_sequences(self):
         seqownersql = 'ALTER SEQUENCE "%s" OWNED BY "%s"."%s"'
         for col, seq in self.sequences:
             self.cursor.execute(seqownersql % (seq, self.temp_name, col))
+
+    def drop_original_table(self):
         self.cursor.execute('DROP TABLE "%s"' % self.table)
+
+    def rename_temp_table(self):
         sql = 'ALTER %s "%s" RENAME TO "%s"'
         for rename in self.rename:
             self.cursor.execute(sql % rename)
