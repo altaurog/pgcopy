@@ -217,3 +217,30 @@ class Replace(object):
             return newsql
         else:
             return idre(old).sub(new, newsql)
+
+
+class RenameReplace(Replace):
+    "Subclass for renaming old table and recreating empty one like it"
+    def __init__(self, connection, table, xform):
+        """
+        xform must be a function which translates old
+        names to new ones, used on tables & pk constraints
+        """
+        super(RenameReplace, self).__init__(connection, table)
+        self.xform = xform
+
+    def drop_original_table(self):
+        pass
+
+    def rename_temp_table(self):
+        sql = 'ALTER %s "%s" RENAME TO "%s"'
+        for objtype, temp, orig in self.rename:
+            print(objtype, temp, orig)
+            new_name = self.xform(orig)
+            self.cursor.execute(sql % (objtype, orig, new_name))
+        super(RenameReplace, self).rename_temp_table()
+
+
+def rename_replace(connection, table, xform):
+    with RenameReplace(connection, table, xform):
+        pass
