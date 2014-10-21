@@ -1,5 +1,11 @@
 Changelog
 -----------
+0.6
+"""
+:date: 21 Oct, 2014
+
+* ``RenameReplace`` variant
+
 0.5
 """
 :date: 14 Jul, 2014

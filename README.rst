@@ -92,6 +92,8 @@ then replaces the old table with the new.  It can be used so::
 
 ``Replace`` renames new db objects like the old, where possible.
 Names of foreign key and check constraints will be mangled.
+As of v0.6 there is also ``pgcopy.util.RenameReplace``, which instead of
+dropping the original objects renames them using a transformation function.
 
 Note that on PostgreSQL 9.1 and earlier, concurrent queries on the table
 `will fail`_ once the table is dropped.
