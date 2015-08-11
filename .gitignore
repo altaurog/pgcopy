@@ -1,0 +1,9 @@
+*.tmp
+*.html
+*.pyc
+*.egg-info/
+*.c
+*.so
+*.dat
+/build/
+/dist/
