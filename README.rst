@@ -110,4 +110,4 @@ cpgcopy_, a Cython implementation, about twice as fast.
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2/
 .. _pytz: https://pypi.python.org/pypi/pytz/
 .. _nose: https://pypi.python.org/pypi/nose/
-.. _cpgcopy: https://bitbucket.org/altaurog/cpgcopy
+.. _cpgcopy: https://github.com/altaurog/cpgcopy
