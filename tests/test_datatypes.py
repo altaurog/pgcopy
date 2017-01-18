@@ -13,10 +13,13 @@ class TypeMixin(db.TemporaryTable):
         bincopy.copy(self.data)
         select_list = ','.join(self.cols)
         self.cur.execute("SELECT %s from %s" % (select_list, self.table))
-        for rec in self.data:
-            self.checkValues(rec, self.cur.fetchone())
+        self.checkResults()
 
-    def checkValues(self, expected, found):
+    def checkResults(self):
+        for rec in self.data:
+            self.checkValue(rec, self.cur.fetchone())
+
+    def checkValue(self, expected, found):
         for a, b in itertools.izip(expected, found):
             test.eq_(a, self.cast(b))
 
@@ -96,3 +99,10 @@ class TestNumeric(TypeMixin):
         (decimal.Decimal('21034.5678'),),
         (decimal.Decimal('-900000.0001'),),
     ]
+
+class TestNumericNan(TypeMixin):
+    datatypes = ['numeric']
+    data = [(decimal.Decimal('NaN'),),]
+
+    def checkResults(self):
+        assert self.cur.fetchone()[0].is_nan()
