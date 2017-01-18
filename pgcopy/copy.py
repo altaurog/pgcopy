@@ -1,4 +1,5 @@
 import calendar
+import functools
 import itertools
 import os
 import struct
@@ -17,23 +18,21 @@ BINCOPY_TRAILER = struct.pack('>h', -1)
 
 def simple_formatter(fmt):
     size = struct.calcsize('>' + fmt)
-    return lambda val: ('i' + fmt, (size, val))
+    return lambda _, val: ('i' + fmt, (size, val))
 
-def str_formatter(val):
+def str_formatter(_, val):
     size = len(val)
     return ('i%ss' % size, (size, val))
 
-def maxsize_formatter(maxsize):
-    def formatter(val):
-        val = val[:maxsize]
-        size = len(val)
-        return ('i%ss' % size, (size, val))
-    return formatter
+def maxsize_formatter(maxsize, val):
+    val = val[:maxsize]
+    size = len(val)
+    return ('i%ss' % size, (size, val))
 
 psql_epoch = 946684800
 psql_epoch_date = date(2000, 1, 1)
 
-def timestamp(dt):
+def timestamp(_, dt):
     'get microseconds since 2000-01-01 00:00'
     # see http://stackoverflow.com/questions/2956886/
     dt = util.to_utc(dt)
@@ -43,7 +42,7 @@ def timestamp(dt):
     val = ((unix_timestamp - psql_epoch) * 1000000) + dt.microsecond
     return ('iq', (8, val))
 
-def datestamp(d):
+def datestamp(_, d):
     'days since 2000-01-01'
     return ('ii', (4, (d - psql_epoch_date).days))
 
@@ -86,9 +85,7 @@ class CopyManager(object):
                 message = '"%s" is not a column of table "%s"'
                 raise ValueError(message % (column, self.table))
             coltype, typemod, notnull = type_info
-            f = type_formatters[coltype]
-            if typemod > -1:
-                f = f(typemod)
+            f = functools.partial(type_formatters[coltype], typemod)
             if not notnull:
                 f = null(f)
             self.formatters.append(f)
