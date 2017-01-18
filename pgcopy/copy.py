@@ -130,4 +130,3 @@ class CopyManager(object):
         except Exception, e:
             message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
             raise type(e), type(e)(message), sys.exc_info()[2]
-
