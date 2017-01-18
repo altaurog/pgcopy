@@ -7,6 +7,10 @@ PostgreSQL database table using `binary copy`_.
 Installation
 -------------
 
+To install::
+
+    pip install pgcopy
+
 pgcopy requires pytz_ and the psycopg2_ db adapter.
 nose_ is required to run the tests.
 
@@ -15,7 +19,7 @@ Use
 
 pgcopy provides facility for copying data from an iterable of tuple-like
 objects using a ``CopyManager``, which must be instantiated with a psycopg2
-db connection, the table name, and an iterable indicating the names of the
+db connection, the table name, and an iterable containing the names of the
 columns to be inserted in the order in which they will be provided.
 pgcopy inspects the database to determine the datatypes of the columns.
 
