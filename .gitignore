@@ -1,3 +1,5 @@
+.cache
+.tox
 *.tmp
 *.html
 *.pyc

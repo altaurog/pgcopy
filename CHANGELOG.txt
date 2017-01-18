@@ -1,8 +1,16 @@
 Changelog
 -----------
+1.0.0
+"""""
+:date: 19 Jan, 2017
+
+* Run tests with tox
+* Support Python 3
+* Initial release on PyPi
+
 0.7
 """
-:date: 19 Jan, 2016
+:date: 19 Jan, 2017
 
 * Add support for serializing Python ``decimal.Decimal`` to PostgreSQL ``numeric``.
 

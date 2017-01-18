@@ -16,9 +16,11 @@ def get_version(package_name, default='0.1'):
             f = open(join(base_dir, package_name + '.py'))
         except IOError:
             return default
-    scope = {}
-    exec f in scope
-    return scope.get('__version__', default)
+    for line in f:
+        parts = line.split()
+        if parts[:2] == ['__version__', '=']:
+            return parts[2].strip("'\"")
+    return default
 
 setup(
     name = package_name,
@@ -32,7 +34,13 @@ setup(
     packages = [package_name],
     install_requires = ["psycopg2", "pytz"],
     classifiers = [
-        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

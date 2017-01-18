@@ -1,5 +1,9 @@
 import decimal
-import itertools
+import sys
+
+if sys.version_info < (3,):
+    memoryview = buffer
+
 from nose import tools as test
 from pgcopy import CopyManager, util
 
@@ -20,7 +24,7 @@ class TypeMixin(db.TemporaryTable):
             self.checkValue(rec, self.cur.fetchone())
 
     def checkValue(self, expected, found):
-        for a, b in itertools.izip(expected, found):
+        for a, b in zip(expected, found):
             test.eq_(a, self.cast(b))
 
     def cast(self, v): return v
@@ -51,32 +55,38 @@ class TestNull(TypeMixin):
 class TestVarchar(TypeMixin):
     datatypes = ['varchar(12)']
 
+    def cast(self, v):
+        return v.strip().encode()
+
 class TestChar(TypeMixin):
     datatypes = ['char(12)']
 
     def cast(self, v):
         test.eq_(12, len(v))
-        return v.strip()
+        return v.strip().encode()
 
 class TestText(TypeMixin):
     datatypes = ['text']
     data = [
-        ('Fourscore and seven years ago our fathers set forth'
-         'on this continent a new nation',),
-        ('Python is a programming language that lets you work quickly'
-         'and integrate systems more effectively.',),
+        (b'Fourscore and seven years ago our fathers set forth '
+         b'on this continent a new nation',),
+        (b'Python is a programming language that lets you work quickly '
+         b'and integrate systems more effectively.',),
     ]
+
+    def cast(self, v):
+        return v.encode()
 
 class TestBytea(TypeMixin):
     datatypes = ['bytea']
     data = [
-        ('\x02\xf3\x18\x44 alphabet',),
-        ('The\x00hippopotamus\x00jumped\x00over\x00the\x00lazy\x00tower',)
+        (b'\x02\xf3\x18\x44 alphabet',),
+        (b'The\x00hippopotamus\x00jumped\x00over\x00the\x00lazy\x00tower',)
     ,]
 
     def cast(self, v):
-        test.assert_is_instance(v, buffer)
-        return str(v)
+        test.assert_is_instance(v, memoryview)
+        return bytes(v)
 
 class TestTimestamp(TypeMixin):
     datatypes = ['timestamp']

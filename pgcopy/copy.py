@@ -1,6 +1,5 @@
 import calendar
 import functools
-import itertools
 import os
 import struct
 import sys
@@ -8,6 +7,11 @@ import tempfile
 import threading
 
 from datetime import date
+
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
 
 from . import inspect, util
 
@@ -155,7 +159,7 @@ class CopyManager(object):
         for record in data:
             fmt = ['>h']
             rdat = [count]
-            for formatter, val in itertools.izip(self.formatters, record):
+            for formatter, val in zip(self.formatters, record):
                 f, d = formatter(val)
                 fmt.append(f)
                 rdat.extend(d)
@@ -169,6 +173,6 @@ class CopyManager(object):
         cursor = self.conn.cursor()
         try:
             cursor.copy_expert(sql, datastream)
-        except Exception, e:
-            message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
-            raise type(e), type(e)(message), sys.exc_info()[2]
+        except Exception as e:
+            e.message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
+            raise e

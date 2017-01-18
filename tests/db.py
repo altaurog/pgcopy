@@ -20,18 +20,19 @@ def get_conn():
 def create_db():
     "connect to test db"
     try:
-        conn = psycopg2.connect(database=db_state['test_db'])
-    except psycopg2.OperationalError, exc:
+        return psycopg2.connect(database=db_state['test_db'])
+    except psycopg2.OperationalError as exc:
         nosuch_db = 'database "%s" does not exist' % db_state['test_db']
         if nosuch_db in str(exc):
             try:
                 master = psycopg2.connect(database='postgres')
+                master.rollback()
                 master.autocommit = True
                 cursor = master.cursor()
                 cursor.execute('CREATE DATABASE %s' % db_state['test_db'])
                 cursor.close()
                 master.close()
-            except psycopg2.Error, exc:
+            except psycopg2.Error as exc:
                 message = ('Unable to connect to or create test db '
                             + db_state['test_db']
                             + '.\nThe error is: %s' % exc)
@@ -39,7 +40,7 @@ def create_db():
             else:
                 conn = psycopg2.connect(database=db_state['test_db'])
                 db_state['drop'] = True
-    return conn
+                return conn
 
 def drop_db():
     "Drop test db"
@@ -47,6 +48,7 @@ def drop_db():
         return
     get_conn().close()
     master = psycopg2.connect(database='postgres')
+    master.rollback()
     master.autocommit = True
     cursor = master.cursor()
     cursor.execute('DROP DATABASE %s' % db_state['test_db'])
@@ -59,7 +61,7 @@ genfloat = lambda i: 1.125 * i
 gendate = lambda i: date(1708, 1, 1) + timedelta(i % (250 * 365))
 gendatetime = lambda i: datetime(1970, 1, 1) + timedelta(hours=i)
 gendatetimetz = lambda i: util.to_utc(datetime(1970, 1, 1) + timedelta(hours=i))
-genstr12 = lambda i: hashlib.md5(str(i)).hexdigest()[:12 - (i % 3)]
+genstr12 = lambda i: hashlib.md5(str(i).encode()).hexdigest()[:12 - (i % 3)].encode()
 
 datagen = {
         'bool': genbool,
@@ -83,6 +85,7 @@ class TemporaryTable(object):
     record_count = 0
     def setUp(self):
         self.conn = get_conn()
+        self.conn.rollback()
         self.conn.autocommit = False
         self.cur = self.conn.cursor()
         self.table = self.__class__.__name__.lower()
@@ -101,7 +104,7 @@ class TemporaryTable(object):
     def generate_data(self, count):
         data = []
         gen = [datagen[t] for t in self.datatypes]
-        for i in xrange(count):
+        for i in range(count):
             row = [g(i) for g in gen]
             data.append(tuple(row))
         return data
