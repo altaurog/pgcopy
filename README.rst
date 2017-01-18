@@ -59,6 +59,12 @@ Currently the following PostgreSQL datatypes are supported:
 * date
 * timestamp
 * timestamp with time zone
+* numeric (data must be ``decimal.Decimal``)
+
+.. note::
+
+    PostgreSQL numeric does not support ``Decimal('Inf')`` or
+    ``Decimal('-Inf')``.  pgcopy serializes these as ``NaN``.
 
 Benchmarks
 -----------

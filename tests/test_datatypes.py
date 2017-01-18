@@ -1,4 +1,6 @@
+import decimal
 import itertools
+from nose import tools as test
 from pgcopy import CopyManager, util
 
 from . import db
@@ -16,7 +18,7 @@ class TypeMixin(db.TemporaryTable):
 
     def checkValues(self, expected, found):
         for a, b in itertools.izip(expected, found):
-            assert (a == self.cast(b))
+            test.eq_(a, self.cast(b))
 
     def cast(self, v): return v
 
@@ -50,7 +52,7 @@ class TestChar(TypeMixin):
     datatypes = ['char(12)']
 
     def cast(self, v):
-        assert (12 == len(v))
+        test.eq_(12, len(v))
         return v.strip()
 
 class TestText(TypeMixin):
@@ -70,7 +72,7 @@ class TestBytea(TypeMixin):
     ,]
 
     def cast(self, v):
-        assert isinstance(v, buffer)
+        test.assert_is_instance(v, buffer)
         return str(v)
 
 class TestTimestamp(TypeMixin):
@@ -84,3 +86,13 @@ class TestTimestampTZ(TypeMixin):
 
 class TestDate(TypeMixin):
     datatypes = ['date']
+
+class TestNumeric(TypeMixin):
+    datatypes = ['numeric']
+
+    data = [
+        (decimal.Decimal('100'),),
+        (decimal.Decimal('-1000'),),
+        (decimal.Decimal('21034.5678'),),
+        (decimal.Decimal('-900000.0001'),),
+    ]

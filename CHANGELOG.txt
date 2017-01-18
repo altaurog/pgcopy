@@ -1,5 +1,11 @@
 Changelog
 -----------
+0.7
+"""
+:date: 19 Jan, 2016
+
+* Add support for serializing Python ``decimal.Decimal`` to PostgreSQL ``numeric``.
+
 0.6
 """
 :date: 21 Oct, 2014
