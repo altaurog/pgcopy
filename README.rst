@@ -110,6 +110,12 @@ Note that on PostgreSQL 9.1 and earlier, concurrent queries on the table
 
 .. _will fail: https://gist.github.com/altaurog/ab0019837719d2a93e6b
 
+
+Local testing
+--------
+
+docker-compose up pgcopy
+
 See Also
 --------
 

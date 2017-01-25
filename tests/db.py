@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, date, timedelta
 import hashlib
 import psycopg2
@@ -5,7 +6,12 @@ import psycopg2
 from pgcopy import util
 
 db_state = {
-        'test_db': 'pgcopy_test',
+        'connection_params': {
+            'dbname': os.getenv('POSTGRES_DB', 'pgcopy_test'),
+            'host': os.getenv('POSTGRES_HOST'),
+            'user': os.getenv('POSTGRES_USER'),
+            'password': os.getenv('POSTGRES_PASSWORD'),
+        },
         'conn': None,
         'drop': False,
     }
@@ -20,25 +26,25 @@ def get_conn():
 def create_db():
     "connect to test db"
     try:
-        return psycopg2.connect(database=db_state['test_db'])
+        return psycopg2.connect(**db_state['connection_params'])
     except psycopg2.OperationalError as exc:
-        nosuch_db = 'database "%s" does not exist' % db_state['test_db']
+        nosuch_db = 'database "%s" does not exist' % db_state['connection_params']['dbname']
         if nosuch_db in str(exc):
             try:
                 master = psycopg2.connect(database='postgres')
                 master.rollback()
                 master.autocommit = True
                 cursor = master.cursor()
-                cursor.execute('CREATE DATABASE %s' % db_state['test_db'])
+                cursor.execute('CREATE DATABASE %s' % db_state['connection_params']['dbname'])
                 cursor.close()
                 master.close()
             except psycopg2.Error as exc:
                 message = ('Unable to connect to or create test db '
-                            + db_state['test_db']
+                            + db_state['connection_params']['dbname']
                             + '.\nThe error is: %s' % exc)
                 raise RuntimeError(message)
             else:
-                conn = psycopg2.connect(database=db_state['test_db'])
+                conn = psycopg2.connect(**db_state['connection_params'])
                 db_state['drop'] = True
                 return conn
 
@@ -51,7 +57,7 @@ def drop_db():
     master.rollback()
     master.autocommit = True
     cursor = master.cursor()
-    cursor.execute('DROP DATABASE %s' % db_state['test_db'])
+    cursor.execute('DROP DATABASE %s' % db_state['connection_params']['dbname'])
     cursor.close()
     master.close()
 

@@ -9,3 +9,4 @@
 *.dat
 /build/
 /dist/
+.idea/
