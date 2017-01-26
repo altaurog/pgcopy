@@ -190,5 +190,5 @@ class CopyManager(object):
         try:
             cursor.copy_expert(sql, datastream)
         except Exception as e:
-            e.message = "error doing binary copy into %s:\n%s" % (self.table, e.message)
+            e.message = "error doing binary copy into %s:\n%s" % (self.table, e)
             raise e
