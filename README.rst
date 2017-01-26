@@ -1,7 +1,7 @@
 pgcopy
 =================
 
-.. image:: https://travis-ci.org/altaurog/pgcopy.svg
+.. image:: https://travis-ci.org/altaurog/pgcopy.svg?branch=master
     :target: https://travis-ci.org/altaurog/pgcopy
 
 pgcopy is a small system for very fast bulk insertion of data into a
