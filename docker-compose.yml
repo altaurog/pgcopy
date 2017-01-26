@@ -1,0 +1,24 @@
+version: '2'
+services:
+  pgcopy:
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile
+    command: bash -c "while ! nc -z pgsql 5432; do sleep 1; done; nosetests"
+    container_name: pgcopy
+    environment:
+      - POSTGRES_DB=pgcopy_test
+      - POSTGRES_HOST=pgsql
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - .:/opt/pgcopy
+    depends_on:
+      - pgsql
+
+  pgsql:
+    image: postgres:9.6
+    environment:
+      - POSTGRES_DB=pgcopy_test
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
