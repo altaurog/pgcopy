@@ -111,27 +111,28 @@ def null(formatter):
         return formatter(val)
     return nullcheck
 
-type_formatters = {
-    'bool': simple_formatter('?'),
-    'int2': simple_formatter('h'),
-    'int4': simple_formatter('i'),
-    'int8': simple_formatter('q'),
-    'float4' : simple_formatter('f'),
-    'float8': simple_formatter('d'),
-    'varchar': maxsize_formatter,
-    'bpchar': maxsize_formatter,
-    'bytea': str_formatter,
-    'text': str_formatter,
-    'json': str_formatter,
-    'jsonb': jsonb_formatter,
-    'date': datestamp,
-    'timestamp': timestamp,
-    'timestamptz': timestamp,
-    'numeric': numeric,
-    'uuid': uuid_formatter,
-}
 
 class CopyManager(object):
+    TYPE_FORMATTERS = {
+        'bool': simple_formatter('?'),
+        'int2': simple_formatter('h'),
+        'int4': simple_formatter('i'),
+        'int8': simple_formatter('q'),
+        'float4': simple_formatter('f'),
+        'float8': simple_formatter('d'),
+        'varchar': maxsize_formatter,
+        'bpchar': maxsize_formatter,
+        'bytea': str_formatter,
+        'text': str_formatter,
+        'json': str_formatter,
+        'jsonb': jsonb_formatter,
+        'date': datestamp,
+        'timestamp': timestamp,
+        'timestamptz': timestamp,
+        'numeric': numeric,
+        'uuid': uuid_formatter,
+    }
+
     def __init__(self, conn, table, cols):
         self.conn = conn
         self.table = table
@@ -147,7 +148,7 @@ class CopyManager(object):
                 message = '"%s" is not a column of table "%s"'
                 raise ValueError(message % (column, self.table))
             coltype, typemod, notnull = type_info
-            f = functools.partial(type_formatters[coltype], typemod)
+            f = functools.partial(self.TYPE_FORMATTERS[coltype], typemod)
             if not notnull:
                 f = null(f)
             self.formatters.append(f)
