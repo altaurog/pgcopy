@@ -1,5 +1,14 @@
 Changelog
 -----------
+1.1.0
+"""""
+:date: 26 Jan, 2017
+
+* Support `uuid`, `json`, and `jsonb` types
+  (Thanks Igor Mastak)
+* Integrate Travis CI
+* Add docker test strategy
+
 1.0.0
 """""
 :date: 19 Jan, 2017
