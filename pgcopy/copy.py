@@ -2,7 +2,6 @@ import calendar
 import functools
 import os
 import struct
-import sys
 import tempfile
 import threading
 
