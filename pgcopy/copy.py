@@ -20,6 +20,9 @@ __all__ = ['CopyManager']
 BINCOPY_HEADER = struct.pack('>11sii', b'PGCOPY\n\377\r\n\0', 0, 0)
 BINCOPY_TRAILER = struct.pack('>h', -1)
 
+MAX_INT64 = 0xFFFFFFFFFFFFFFFF
+
+
 def simple_formatter(fmt):
     size = struct.calcsize('>' + fmt)
     return lambda _, val: ('i' + fmt, (size, val))
@@ -91,6 +94,17 @@ def ndig(a):
         res += d * 10 ** i
     return res
 
+
+def jsonb_formatter(_, val):
+    size = len(val)
+    # first char must me binary format of jsonb in postgresql
+    return 'ib%is' % size, (size + 1, 1, val)
+
+
+def uuid_formatter(_, guid):
+    return 'i2Q', (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
+
+
 def null(formatter):
     def nullcheck(val):
         if val is None:
@@ -109,10 +123,13 @@ type_formatters = {
     'bpchar': maxsize_formatter,
     'bytea': str_formatter,
     'text': str_formatter,
+    'json': str_formatter,
+    'jsonb': jsonb_formatter,
     'date': datestamp,
     'timestamp': timestamp,
     'timestamptz': timestamp,
     'numeric': numeric,
+    'uuid': uuid_formatter,
 }
 
 class CopyManager(object):

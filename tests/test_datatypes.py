@@ -1,5 +1,8 @@
+import json
 import decimal
 import sys
+import uuid
+
 
 if sys.version_info < (3,):
     memoryview = buffer
@@ -77,6 +80,29 @@ class TestText(TypeMixin):
     def cast(self, v):
         return v.encode()
 
+
+class TestJSON(TypeMixin):
+    datatypes = ['json']
+    data = [
+        (b'{"data": "Fourscore and seven years ago our fathers set forth"}',),
+        (b'{"data": "Python is a programming language that lets you work quickly"}',),
+    ]
+
+    def cast(self, v):
+        return json.dumps(v).encode()
+
+
+class TestJSONB(TypeMixin):
+    datatypes = ['jsonb']
+    data = [
+        (b'{"data": "Fourscore and seven years ago our fathers set forth"}',),
+        (b'{"data": "Python is a programming language that lets you work quickly"}',),
+    ]
+
+    def cast(self, v):
+        return json.dumps(v).encode()
+
+
 class TestBytea(TypeMixin):
     datatypes = ['bytea']
     data = [
@@ -116,3 +142,14 @@ class TestNumericNan(TypeMixin):
 
     def checkResults(self):
         assert self.cur.fetchone()[0].is_nan()
+
+
+class TestUUID(TypeMixin):
+    datatypes = ['uuid']
+    data = [
+        (uuid.UUID('55daa192-a28a-4c49-ae84-ef3564e32308'),),
+        (uuid.UUID('8b56420e-7e15-4bae-a76e-af20e35ea88f'),),
+    ]
+
+    def cast(self, v):
+        return uuid.UUID(v)
