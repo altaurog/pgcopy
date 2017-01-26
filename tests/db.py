@@ -4,6 +4,8 @@ import psycopg2
 
 from pgcopy import util
 
+from nose.plugins.skip import SkipTest
+
 db_state = {
         'test_db': 'pgcopy_test',
         'conn': None,
@@ -92,11 +94,16 @@ class TemporaryTable(object):
         colsql = []
         for i, coltype in enumerate(self.datatypes):
             colsql.append('%s %s %s' % (colname(i), coltype, self.null))
-        self.cur.execute(
-                "CREATE TEMPORARY TABLE %s (" % self.table
-                + ', '.join(colsql)
-                + ");"
-            )
+        try:
+            self.cur.execute(
+                    "CREATE TEMPORARY TABLE %s (" % self.table
+                    + ', '.join(colsql)
+                    + ");"
+                )
+        except psycopg2.ProgrammingError as e:
+            self.conn.rollback()
+            if '42704' == e.pgcode:
+                raise SkipTest('Unsupported datatype')
         self.cols = [colname(i) for i in range(len(self.datatypes))]
         if self.data is None and self.record_count > 0:
             self.data = self.generate_data(self.record_count)
