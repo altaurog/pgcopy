@@ -33,6 +33,10 @@ matrix:
           env: TOXENV=py35
           addons:
               postgresql: "9.4"
+        - python: 3.5
+          env: TOXENV=py35
+          addons:
+              postgresql: "9.6"
         - python: 3.6
           env: TOXENV=py36
           addons:
