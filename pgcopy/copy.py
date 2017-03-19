@@ -134,18 +134,21 @@ type_formatters = {
 class CopyManager(object):
     def __init__(self, conn, table, cols):
         self.conn = conn
-        self.table = table
+        if '.' in table:
+            self.schema, self.table = table.split('.', 1)
+        else:
+            self.schema, self.table = 'public', table
         self.cols = cols
         self.compile()
 
     def compile(self):
         self.formatters = []
-        type_dict = inspect.get_types(self.conn, self.table)
+        type_dict = inspect.get_types(self.conn, self.schema, self.table)
         for column in self.cols:
             type_info = type_dict.get(column)
             if type_info is None:
-                message = '"%s" is not a column of table "%s"'
-                raise ValueError(message % (column, self.table))
+                message = '"%s" is not a column of table "%s"."%s"'
+                raise ValueError(message % (column, self.schema, self.table))
             coltype, typemod, notnull = type_info
             f = functools.partial(type_formatters[coltype], typemod)
             if not notnull:
@@ -184,11 +187,11 @@ class CopyManager(object):
 
     def copystream(self, datastream):
         columns = '", "'.join(self.cols)
-        sql = """COPY "{0}" ("{1}")
-                FROM STDIN WITH BINARY""".format(self.table, columns)
+        sql = """COPY "{0}"."{1}" ("{2}")
+                FROM STDIN WITH BINARY""".format(self.schema, self.table, columns)
         cursor = self.conn.cursor()
         try:
             cursor.copy_expert(sql, datastream)
         except Exception as e:
-            e.message = "error doing binary copy into %s:\n%s" % (self.table, e)
+            e.message = "error doing binary copy into %s.%s:\n%s" % (self.schema, self.table, e)
             raise e

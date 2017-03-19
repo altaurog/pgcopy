@@ -91,6 +91,14 @@ class TemporaryTable(object):
     null = 'NOT NULL'
     data = None
     record_count = 0
+
+    def temp_schema_name(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""SELECT nspname
+                          FROM   pg_namespace
+                          WHERE  oid = pg_my_temp_schema()""")
+        return cursor.fetchall()[0][0]
+
     def setUp(self):
         self.conn = get_conn()
         self.conn.rollback()
@@ -110,6 +118,9 @@ class TemporaryTable(object):
             self.conn.rollback()
             if '42704' == e.pgcode:
                 raise SkipTest('Unsupported datatype')
+
+        self.schema_table = '{schema}.{table}'.format(schema=self.temp_schema_name(), table=self.table)
+
         self.cols = [colname(i) for i in range(len(self.datatypes))]
         if self.data is None and self.record_count > 0:
             self.data = self.generate_data(self.record_count)

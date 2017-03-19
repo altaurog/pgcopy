@@ -16,7 +16,7 @@ class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     record_count = 3
     def test_type(self):
-        bincopy = CopyManager(self.conn, self.table, self.cols)
+        bincopy = CopyManager(self.conn, self.schema_table, self.cols)
         bincopy.copy(self.data)
         select_list = ','.join(self.cols)
         self.cur.execute("SELECT %s from %s" % (select_list, self.table))
