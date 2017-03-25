@@ -187,11 +187,12 @@ class CopyManager(object):
 
     def copystream(self, datastream):
         columns = '", "'.join(self.cols)
-        sql = """COPY "{0}"."{1}" ("{2}")
-                FROM STDIN WITH BINARY""".format(self.schema, self.table, columns)
+        cmd = 'COPY "{0}"."{1}" ("{2}") FROM STDIN WITH BINARY'
+        sql = cmd.format(self.schema, self.table, columns)
         cursor = self.conn.cursor()
         try:
             cursor.copy_expert(sql, datastream)
         except Exception as e:
-            e.message = "error doing binary copy into %s.%s:\n%s" % (self.schema, self.table, e)
+            templ = "error doing binary copy into {0}.{1}:\n{2}"
+            e.message = templ.format(self.schema, self.table, e)
             raise e
