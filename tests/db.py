@@ -88,6 +88,7 @@ datagen = {
 colname = lambda i: chr(ord('a') + i)
 
 class TemporaryTable(object):
+    temp = 'TEMPORARY'
     null = 'NOT NULL'
     data = None
     record_count = 0
@@ -109,11 +110,9 @@ class TemporaryTable(object):
         for i, coltype in enumerate(self.datatypes):
             colsql.append('%s %s %s' % (colname(i), coltype, self.null))
         try:
-            self.cur.execute(
-                    "CREATE TEMPORARY TABLE %s (" % self.table
-                    + ', '.join(colsql)
-                    + ");"
-                )
+            collist = ', '.join(colsql)
+            cmd = "CREATE {} TABLE {} ({})"
+            self.cur.execute(cmd.format(self.temp, self.table, collist))
         except psycopg2.ProgrammingError as e:
             self.conn.rollback()
             if '42704' == e.pgcode:
