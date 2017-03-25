@@ -1,5 +1,11 @@
 Changelog
 -----------
+1.2.0
+"""""
+:date: 25 Mar, 2017
+
+* Support db schema (Thanks Marcin Gozdalik)
+
 1.1.0
 """""
 :date: 26 Jan, 2017

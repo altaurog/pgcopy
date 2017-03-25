@@ -48,6 +48,10 @@ you can get a slight performance benefit with in-memory storage::
     from cStringIO import StringIO
     mgr.copy(records, StringIO)
 
+A db schema can be specified in the table name using dot notation::
+
+    mgr = CopyManager(conn, 'myschema.measurements', cols)
+
 Supported datatypes
 -------------------
 
