@@ -75,6 +75,11 @@ Currently the following PostgreSQL datatypes are supported:
 * jsonb
 * uuid
 
+Unicode strings in the data to be inserted (all values of type ``str`` in
+Python 3) should be encoded as ``bytes`` before passing them to ``copy``.
+Values intended to be ``NULL`` in the database should be encoded as ``None``
+rather than as empty strings.
+
 .. note::
 
     PostgreSQL numeric does not support ``Decimal('Inf')`` or
