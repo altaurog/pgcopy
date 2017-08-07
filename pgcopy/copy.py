@@ -150,7 +150,11 @@ class CopyManager(object):
                 message = '"%s" is not a column of table "%s"."%s"'
                 raise ValueError(message % (column, self.schema, self.table))
             coltype, typemod, notnull = type_info
-            f = functools.partial(type_formatters[coltype], typemod)
+            # Handle VARCHAR with no size restriction like TEXT
+            if coltype == 'varchar' and typemod == -1:
+                f = functools.partial(type_formatters['text'], typemod)
+            else:
+                f = functools.partial(type_formatters[coltype], typemod)
             if not notnull:
                 f = null(f)
             self.formatters.append(f)
