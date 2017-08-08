@@ -58,20 +58,20 @@ class TestNull(TypeMixin):
     data = [(1,), (2,), (None,)]
 
 class TestVarchar(TypeMixin):
-    datatypes = ['varchar(12)']
+    datatypes = ['varchar(12)', 'varchar']
 
     data = [
-        ('',),
-        ('one',),
-        ('one two four',),
-        ('one two three',),
+        ('', '',),
+        ('one', 'one',),
+        ('one two four', 'one two four',),
+        ('one two three', 'one two three',),
     ]
 
     def cast(self, v):
         return v.strip().encode()
 
     def expected(self, v):
-        return (v[0][:12],)
+        return (v[0][:12], v[1])
 
 
 class TestChar(TypeMixin):
