@@ -27,10 +27,12 @@ class TypeMixin(db.TemporaryTable):
             self.checkValue(rec, self.cur.fetchone())
 
     def checkValue(self, expected, found):
-        for a, b in zip(expected, found):
+        for a, b in zip(self.expected(expected), found):
             test.eq_(a, self.cast(b))
 
     def cast(self, v): return v
+
+    expected = cast
 
 class TestInteger(TypeMixin):
     datatypes = ['integer']
@@ -58,15 +60,35 @@ class TestNull(TypeMixin):
 class TestVarchar(TypeMixin):
     datatypes = ['varchar(12)']
 
+    data = [
+        ('',),
+        ('one',),
+        ('one two four',),
+        ('one two three',),
+    ]
+
     def cast(self, v):
         return v.strip().encode()
+
+    def expected(self, v):
+        return (v[0][:12],)
+
 
 class TestChar(TypeMixin):
     datatypes = ['char(12)']
 
+    data = [
+        ('',),
+        ('one',),
+        ('one two four',),
+        ('one two three',),
+    ]
+
     def cast(self, v):
-        test.eq_(12, len(v))
-        return v.strip().encode()
+        return v.encode()
+
+    def expected(self, v):
+        return (v[0][:12].ljust(12),)
 
 class TestText(TypeMixin):
     datatypes = ['text']

@@ -31,9 +31,8 @@ def str_formatter(_, val):
     return ('i%ss' % size, (size, val))
 
 def maxsize_formatter(maxsize, val):
-    val = val[:maxsize]
-    size = len(val)
-    return ('i%ss' % size, (size, val))
+    size = min(len(val), maxsize - 4)
+    return ('i%ss' % size, (size, val[:size]))
 
 psql_epoch = 946684800
 psql_epoch_date = date(2000, 1, 1)
