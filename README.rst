@@ -45,8 +45,13 @@ For example::
 By default, a temporary file on disk is used.  If there's enough memory,
 you can get a slight performance benefit with in-memory storage::
 
+    # Python 2
     from cStringIO import StringIO
     mgr.copy(records, StringIO)
+
+    # Python 3
+    from cStringIO import BytesIO
+    mgr.copy(records, BytesIO)
 
 A db schema can be specified in the table name using dot notation::
 
@@ -74,6 +79,11 @@ Currently the following PostgreSQL datatypes are supported:
 * json
 * jsonb
 * uuid
+
+Unicode strings in the data to be inserted (all values of type ``str`` in
+Python 3) should be encoded as ``bytes`` before passing them to ``copy``.
+Values intended to be ``NULL`` in the database should be encoded as ``None``
+rather than as empty strings.
 
 .. note::
 
