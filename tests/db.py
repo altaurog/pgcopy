@@ -69,7 +69,7 @@ genfloat = lambda i: 1.125 * i
 gendate = lambda i: date(1708, 1, 1) + timedelta(i % (250 * 365))
 gendatetime = lambda i: datetime(1970, 1, 1) + timedelta(hours=i)
 gendatetimetz = lambda i: util.to_utc(datetime(1970, 1, 1) + timedelta(hours=i))
-genstr12 = lambda i: hashlib.md5(str(i).encode()).hexdigest()[:12 - (i % 3)].encode()
+genstr12 = lambda i: hashlib.md5(str(i).encode()).hexdigest()[:12 - (i % 3)]
 
 datagen = {
         'bool': genbool,

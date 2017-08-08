@@ -67,9 +67,6 @@ class TestVarchar(TypeMixin):
         ('one two three', 'one two three',),
     ]
 
-    def cast(self, v):
-        return v.strip().encode()
-
     def expected(self, v):
         return (v[0][:12], v[1])
 
@@ -84,45 +81,39 @@ class TestChar(TypeMixin):
         ('one two three',),
     ]
 
-    def cast(self, v):
-        return v.encode()
-
     def expected(self, v):
         return (v[0][:12].ljust(12),)
 
 class TestText(TypeMixin):
     datatypes = ['text']
     data = [
-        (b'Fourscore and seven years ago our fathers set forth '
-         b'on this continent a new nation',),
-        (b'Python is a programming language that lets you work quickly '
-         b'and integrate systems more effectively.',),
+        ('Fourscore and seven years ago our fathers set forth '
+         'on this continent a new nation',),
+        ('Python is a programming language that lets you work quickly '
+         'and integrate systems more effectively.',),
     ]
-
-    def cast(self, v):
-        return v.encode()
 
 
 class TestJSON(TypeMixin):
     datatypes = ['json']
     data = [
-        (b'{"data": "Fourscore and seven years ago our fathers set forth"}',),
-        (b'{"data": "Python is a programming language that lets you work quickly"}',),
+        ('{"data": "Fourscore and seven years ago our fathers set forth"}',),
+        ('{"data": "Python is a programming language that lets you work quickly"}',),
     ]
 
     def cast(self, v):
-        return json.dumps(v).encode()
+        return json.dumps(v)
 
 
 class TestJSONB(TypeMixin):
     datatypes = ['jsonb']
     data = [
-        (b'{"data": "Fourscore and seven years ago our fathers set forth"}',),
-        (b'{"data": "Python is a programming language that lets you work quickly"}',),
+        ('{"data": "Fourscore and seven years ago our fathers set forth"}',),
+        ('{"data": "Python is a programming language that lets you work quickly"}',),
     ]
 
     def cast(self, v):
-        return json.dumps(v).encode()
+        return json.dumps(v)
 
 
 class TestBytea(TypeMixin):
@@ -144,7 +135,6 @@ class TestTimestampTZ(TypeMixin):
 
     def cast(self, v):
         return util.to_utc(v)
-
 class TestDate(TypeMixin):
     datatypes = ['date']
 

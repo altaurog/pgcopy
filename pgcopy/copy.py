@@ -26,13 +26,18 @@ def simple_formatter(fmt):
     size = struct.calcsize('>' + fmt)
     return lambda _, val: ('i' + fmt, (size, val))
 
-def str_formatter(_, val):
+def bytes_formatter(_, val):
     size = len(val)
     return ('i%ss' % size, (size, val))
 
+def str_formatter(_, val):
+    bval = val.encode()
+    size = len(bval)
+    return ('i%ss' % size, (size, bval))
+
 def maxsize_formatter(maxsize, val):
     size = min(len(val), maxsize - 4) if maxsize >= 0 else len(val)
-    return ('i%ss' % size, (size, val[:size]))
+    return ('i%ss' % size, (size, val[:size].encode()))
 
 psql_epoch = 946684800
 psql_epoch_date = date(2000, 1, 1)
@@ -119,7 +124,7 @@ type_formatters = {
     'float8': simple_formatter('d'),
     'varchar': maxsize_formatter,
     'bpchar': maxsize_formatter,
-    'bytea': str_formatter,
+    'bytea': bytes_formatter,
     'text': str_formatter,
     'json': str_formatter,
     'jsonb': jsonb_formatter,

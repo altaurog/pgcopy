@@ -18,8 +18,3 @@ class TestPublicSchema(test_datatypes.TypeMixin):
         select_list = ','.join(self.cols)
         self.cur.execute("SELECT %s from %s" % (select_list, self.table))
         self.checkResults()
-
-    def cast(self, v):
-        if isinstance(v, str):
-            return v.encode()
-        return v
