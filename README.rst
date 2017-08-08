@@ -45,12 +45,7 @@ For example::
 By default, a temporary file on disk is used.  If there's enough memory,
 you can get a slight performance benefit with in-memory storage::
 
-    # Python 2
-    from cStringIO import StringIO
-    mgr.copy(records, StringIO)
-
-    # Python 3
-    from cStringIO import BytesIO
+    from io import BytesIO
     mgr.copy(records, BytesIO)
 
 A db schema can be specified in the table name using dot notation::
