@@ -16,7 +16,7 @@ class Sanity(db.TemporaryTable):
         ]
 
     def sanity(self):
-        mgr = self.manager(self.conn, self.table, self.cols)
+        mgr = self.manager(self.conn, self.schema_table, self.cols)
         datastream = StringIO()
         mgr.writestream(self.data, datastream)
         datastream.seek(0)

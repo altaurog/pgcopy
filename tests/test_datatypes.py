@@ -16,7 +16,7 @@ class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     record_count = 3
     def test_type(self):
-        bincopy = CopyManager(self.conn, self.table, self.cols)
+        bincopy = CopyManager(self.conn, self.schema_table, self.cols)
         bincopy.copy(self.data)
         select_list = ','.join(self.cols)
         self.cur.execute("SELECT %s from %s" % (select_list, self.table))
@@ -27,10 +27,12 @@ class TypeMixin(db.TemporaryTable):
             self.checkValue(rec, self.cur.fetchone())
 
     def checkValue(self, expected, found):
-        for a, b in zip(expected, found):
+        for a, b in zip(self.expected(expected), found):
             test.eq_(a, self.cast(b))
 
     def cast(self, v): return v
+
+    expected = cast
 
 class TestInteger(TypeMixin):
     datatypes = ['integer']
@@ -56,17 +58,37 @@ class TestNull(TypeMixin):
     data = [(1,), (2,), (None,)]
 
 class TestVarchar(TypeMixin):
-    datatypes = ['varchar(12)']
+    datatypes = ['varchar(12)', 'varchar']
+
+    data = [
+        (b'', b'',),
+        (b'one', b'one',),
+        (b'one two four', b'one two four',),
+        (b'one two three', b'one two three',),
+    ]
 
     def cast(self, v):
         return v.strip().encode()
+
+    def expected(self, v):
+        return (v[0][:12], v[1])
+
 
 class TestChar(TypeMixin):
     datatypes = ['char(12)']
 
+    data = [
+        (b'',),
+        (b'one',),
+        (b'one two four',),
+        (b'one two three',),
+    ]
+
     def cast(self, v):
-        test.eq_(12, len(v))
-        return v.strip().encode()
+        return v.encode()
+
+    def expected(self, v):
+        return (v[0][:12].ljust(12),)
 
 class TestText(TypeMixin):
     datatypes = ['text']
@@ -131,9 +153,11 @@ class TestNumeric(TypeMixin):
 
     data = [
         (decimal.Decimal('100'),),
+        (decimal.Decimal('10000'),),
         (decimal.Decimal('-1000'),),
         (decimal.Decimal('21034.56'),),
         (decimal.Decimal('-900000.0001'),),
+        (decimal.Decimal('-1.3E25'),),
     ]
 
 class TestNumericNan(TypeMixin):

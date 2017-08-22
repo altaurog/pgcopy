@@ -1,5 +1,30 @@
 Changelog
 -----------
+1.3.0
+"""""
+:date: 22 Aug, 2017
+
+* Support unlimited varchar fields (thanks John A. Bachman)
+* Updated documentation regarding string encoding in Python 3 (thanks John
+  A. Bachman)
+* Fix bug in varchar truncation
+* Fix bug in numeric type formatter (reported by Peter Van Eynde)
+
+1.2.0
+"""""
+:date: 25 Mar, 2017
+
+* Support db schema (thanks Marcin Gozdalik)
+
+1.1.0
+"""""
+:date: 26 Jan, 2017
+
+* Support `uuid`, `json`, and `jsonb` types
+  (thanks Igor Mastak)
+* Integrate Travis CI
+* Add docker test strategy
+
 1.0.0
 """""
 :date: 19 Jan, 2017

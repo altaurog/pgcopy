@@ -88,9 +88,18 @@ datagen = {
 colname = lambda i: chr(ord('a') + i)
 
 class TemporaryTable(object):
+    temp = 'TEMPORARY'
     null = 'NOT NULL'
     data = None
     record_count = 0
+
+    def temp_schema_name(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""SELECT nspname
+                          FROM   pg_namespace
+                          WHERE  oid = pg_my_temp_schema()""")
+        return cursor.fetchall()[0][0]
+
     def setUp(self):
         self.conn = get_conn()
         self.conn.rollback()
@@ -101,15 +110,17 @@ class TemporaryTable(object):
         for i, coltype in enumerate(self.datatypes):
             colsql.append('%s %s %s' % (colname(i), coltype, self.null))
         try:
-            self.cur.execute(
-                    "CREATE TEMPORARY TABLE %s (" % self.table
-                    + ', '.join(colsql)
-                    + ");"
-                )
+            collist = ', '.join(colsql)
+            cmd = "CREATE {} TABLE {} ({})"
+            self.cur.execute(cmd.format(self.temp, self.table, collist))
         except psycopg2.ProgrammingError as e:
             self.conn.rollback()
             if '42704' == e.pgcode:
                 raise SkipTest('Unsupported datatype')
+
+        schema = self.temp_schema_name()
+        self.schema_table = '{}.{}'.format(schema, self.table)
+
         self.cols = [colname(i) for i in range(len(self.datatypes))]
         if self.data is None and self.record_count > 0:
             self.data = self.generate_data(self.record_count)

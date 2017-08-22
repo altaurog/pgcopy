@@ -1,7 +1,7 @@
 pgcopy
 =================
 
-.. image:: https://travis-ci.org/altaurog/pgcopy.svg
+.. image:: https://travis-ci.org/altaurog/pgcopy.svg?branch=master
     :target: https://travis-ci.org/altaurog/pgcopy
 
 pgcopy is a small system for very fast bulk insertion of data into a
@@ -12,7 +12,7 @@ Installation
 
 To install::
 
-    pip install pgcopy
+    $ pip install pgcopy
 
 pgcopy requires pytz_ and the psycopg2_ db adapter.
 nose_ is required to run the tests.
@@ -45,8 +45,12 @@ For example::
 By default, a temporary file on disk is used.  If there's enough memory,
 you can get a slight performance benefit with in-memory storage::
 
-    from cStringIO import StringIO
-    mgr.copy(records, StringIO)
+    from io import BytesIO
+    mgr.copy(records, BytesIO)
+
+A db schema can be specified in the table name using dot notation::
+
+    mgr = CopyManager(conn, 'myschema.measurements', cols)
 
 Supported datatypes
 -------------------
@@ -67,11 +71,37 @@ Currently the following PostgreSQL datatypes are supported:
 * timestamp
 * timestamp with time zone
 * numeric (data must be ``decimal.Decimal``)
+* json
+* jsonb
+* uuid
+
+Unicode strings in the data to be inserted (all values of type ``str`` in
+Python 3) should be encoded as ``bytes`` before passing them to ``copy``.
+Values intended to be ``NULL`` in the database should be encoded as ``None``
+rather than as empty strings.
 
 .. note::
 
     PostgreSQL numeric does not support ``Decimal('Inf')`` or
     ``Decimal('-Inf')``.  pgcopy serializes these as ``NaN``.
+
+Testing
+--------
+
+For a fast test run using current environment, use nose_::
+
+    $ nosetests
+
+For more thorough testing, Tox_ configuration will run tests on python
+versions 2.7 and 3.3 - 3.6::
+
+    $ tox
+
+Additionally, test can be run with no local requirements other than the
+ubiquitous docker::
+
+    $ docker-compose up pgcopy
+
 
 Benchmarks
 -----------
@@ -113,12 +143,6 @@ Note that on PostgreSQL 9.1 and earlier, concurrent queries on the table
 
 .. _will fail: https://gist.github.com/altaurog/ab0019837719d2a93e6b
 
-
-Local testing
---------
-
-docker-compose up pgcopy
-
 See Also
 --------
 
@@ -130,3 +154,4 @@ cpgcopy_, a Cython implementation, about twice as fast.
 .. _pytz: https://pypi.python.org/pypi/pytz/
 .. _nose: https://pypi.python.org/pypi/nose/
 .. _cpgcopy: https://github.com/altaurog/cpgcopy
+.. _Tox: https://tox.readthedocs.io/en/latest/
