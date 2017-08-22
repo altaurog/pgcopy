@@ -1,7 +1,9 @@
+sudo: required
 language: python
 matrix:
     include:
         - python: 2.7
+          dist: precise
           env: TOXENV=py27
           addons:
               postgresql: "9.1"
@@ -23,6 +25,7 @@ matrix:
               postgresql: "9.4"
         - python: 3.5
           env: TOXENV=py35
+          dist: precise
           addons:
               postgresql: "9.1"
         - python: 3.5
@@ -35,6 +38,7 @@ matrix:
               postgresql: "9.4"
         - python: 3.5
           env: TOXENV=py35
+          dist: trusty
           addons:
               postgresql: "9.6"
         - python: 3.6
