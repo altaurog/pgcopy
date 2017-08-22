@@ -153,9 +153,11 @@ class TestNumeric(TypeMixin):
 
     data = [
         (decimal.Decimal('100'),),
+        (decimal.Decimal('10000'),),
         (decimal.Decimal('-1000'),),
         (decimal.Decimal('21034.56'),),
         (decimal.Decimal('-900000.0001'),),
+        (decimal.Decimal('-1.3E25'),),
     ]
 
 class TestNumericNan(TypeMixin):
