@@ -11,3 +11,9 @@ class Test(TypeMixin):
         select_list = ','.join(self.cols)
         self.cur.execute("SELECT %s from %s" % (select_list, self.table))
         self.checkResults()
+
+    def cast(self, v):
+        try:
+            return v.encode()
+        except AttributeError:
+            return v

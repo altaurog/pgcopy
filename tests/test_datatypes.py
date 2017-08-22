@@ -61,10 +61,10 @@ class TestVarchar(TypeMixin):
     datatypes = ['varchar(12)', 'varchar']
 
     data = [
-        ('', '',),
-        ('one', 'one',),
-        ('one two four', 'one two four',),
-        ('one two three', 'one two three',),
+        (b'', b'',),
+        (b'one', b'one',),
+        (b'one two four', b'one two four',),
+        (b'one two three', b'one two three',),
     ]
 
     def cast(self, v):
@@ -78,10 +78,10 @@ class TestChar(TypeMixin):
     datatypes = ['char(12)']
 
     data = [
-        ('',),
-        ('one',),
-        ('one two four',),
-        ('one two three',),
+        (b'',),
+        (b'one',),
+        (b'one two four',),
+        (b'one two three',),
     ]
 
     def cast(self, v):
