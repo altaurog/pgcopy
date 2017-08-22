@@ -1,8 +1,4 @@
 #!/bin/bash
-VERSION=`python setup.py --version`
-DISTDIR="dist/$VERSION"
-rm -rf "$DISTDIR"
-mkdir "$DISTDIR"
-python setup.py -d "$DISTDIR" sdist
-python setup.py -d "$DISTDIR" bdist_wheel --universal
-twine upload "$DISTDIR"/*
+python setup.py sdist
+python setup.py bdist_wheel --universal
+twine upload dist/$(python setup.py --fullname)*
