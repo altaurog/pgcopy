@@ -41,6 +41,9 @@ For example::
     conn = psycopg2.connect(database='weather_db')
     mgr = CopyManager(conn, 'measurements_table', cols)
     mgr.copy(records)
+    
+    # don't forget to commit!
+    conn.commit()
 
 By default, a temporary file on disk is used.  If there's enough memory,
 you can get a slight performance benefit with in-memory storage::
