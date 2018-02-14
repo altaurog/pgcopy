@@ -44,7 +44,7 @@ matrix:
               postgresql: "9.5"
         - python: 3.6
           dist: trusty
-          env: TOXENV=py35
+          env: TOXENV=py36
           addons:
               postgresql: "9.5"
         - python: 3.6
