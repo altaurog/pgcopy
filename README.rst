@@ -41,7 +41,7 @@ For example::
     conn = psycopg2.connect(database='weather_db')
     mgr = CopyManager(conn, 'measurements_table', cols)
     mgr.copy(records)
-    
+
     # don't forget to commit!
     conn.commit()
 

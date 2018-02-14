@@ -7,3 +7,4 @@ with contributions from
 * Igor Mastak `@mastak <https://github.com/mastak>`_
 * Marcin Gozdalik `@gozdal <https://github.com/gozdal>`_
 * John A. Bachman `@johnbachman <https://github.com/johnbachman>`_
+* Akshaye Shenoi `@akshayeshenoi <https://github.com/akshayeshenoi>`_
