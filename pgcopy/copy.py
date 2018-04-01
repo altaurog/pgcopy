@@ -133,12 +133,12 @@ type_formatters = {
 }
 
 class CopyManager(object):
-    def __init__(self, conn, table, cols):
+    def __init__(self, conn, table, cols, schema='public'):
         self.conn = conn
         if '.' in table:
             self.schema, self.table = table.split('.', 1)
         else:
-            self.schema, self.table = 'public', table
+            self.schema, self.table = schema, table
         self.cols = cols
         self.compile()
 
