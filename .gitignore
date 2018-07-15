@@ -11,3 +11,4 @@
 /dist/
 .idea/
 .vscode/
+.DS_Store

@@ -283,9 +283,10 @@ class Replace(object):
 
     def create_views(self):
         viewsql = 'CREATE VIEW "%s" AS %s'
-        for view in self.views:
+        for view, viewdef in self.views:
             sql = viewsql % (
-                '{}"."{}'.format(self.schema, view)
+                '{}"."{}'.format(self.schema, view),
+                viewdef
             )
             self.execute_sql(sql)
 
