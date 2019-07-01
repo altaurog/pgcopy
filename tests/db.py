@@ -118,7 +118,7 @@ class TemporaryTable(object):
             if '42704' == e.pgcode:
                 raise SkipTest('Unsupported datatype')
 
-        schema = self.temp_schema_name()
+        schema = self.temp_schema_name() if self.temp else 'public'
         self.schema_table = '{}.{}'.format(schema, self.table)
 
         if self.data is None and self.record_count > 0:
