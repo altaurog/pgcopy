@@ -106,13 +106,13 @@ class TemporaryTable(object):
         self.conn.autocommit = False
         self.cur = self.conn.cursor()
         self.table = self.__class__.__name__.lower()
-        colsql = []
-        for i, coltype in enumerate(self.datatypes):
-            colsql.append('%s %s %s' % (colname(i), coltype, self.null))
+        self.cols = [colname(i) for i in range(len(self.datatypes))]
+        colsql = [(c, t, self.null) for c, t in zip(self.cols, self.datatypes)]
         try:
-            collist = ', '.join(colsql)
-            cmd = "CREATE {} TABLE {} ({})"
-            self.cur.execute(cmd.format(self.temp, self.table, collist))
+            collist = ', '.join(map(' '.join, colsql))
+            template = "CREATE {} TABLE {} ({})"
+            cmd = template.format(self.temp, self.table, collist)
+            self.cur.execute(cmd)
         except psycopg2.ProgrammingError as e:
             self.conn.rollback()
             if '42704' == e.pgcode:
@@ -121,17 +121,12 @@ class TemporaryTable(object):
         schema = self.temp_schema_name()
         self.schema_table = '{}.{}'.format(schema, self.table)
 
-        self.cols = [colname(i) for i in range(len(self.datatypes))]
         if self.data is None and self.record_count > 0:
             self.data = self.generate_data(self.record_count)
 
     def generate_data(self, count):
-        data = []
         gen = [datagen[t] for t in self.datatypes]
-        for i in range(count):
-            row = [g(i) for g in gen]
-            data.append(tuple(row))
-        return data
+        return [tuple(g(i) for g in gen) for i in range(count)]
 
     def tearDown(self):
         self.conn.rollback()
