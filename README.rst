@@ -91,12 +91,12 @@ rather than as empty strings.
 Testing
 --------
 
-For a fast test run using current environment, use nose_::
+For a fast test run using current environment, use pytest_::
 
-    $ nosetests
+    $ pytest tests
 
 For more thorough testing, Tox_ configuration will run tests on python
-versions 2.7 and 3.3 - 3.6::
+versions 2.7 and 3.4 - 3.7::
 
     $ tox
 
@@ -113,11 +113,9 @@ Below are simple benchmarks for 100000 records.
 This gives a general idea of the kind of speedup 
 available with pgcopy::
 
-    $ nosetests -c tests/benchmark.cfg 
+    $ python -m tests.benchmark
               ExecuteManyBenchmark:   7.75s
                    PGCopyBenchmark:   0.54s
-    ----------------------------------------------------------------------
-    Ran 2 tests in 9.101s
 
 Replacing a Table
 ------------------
@@ -153,8 +151,8 @@ cpgcopy_, a Cython implementation, about twice as fast.
 
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
-.. _psycopg2: https://pypi.python.org/pypi/psycopg2/
-.. _pytz: https://pypi.python.org/pypi/pytz/
-.. _nose: https://pypi.python.org/pypi/nose/
+.. _psycopg2: https://pypi.org/project/psycopg2/
+.. _pytz: https://pypi.org/project/pytz/
+.. _pytest: https://pypi.org/project/pytest/
 .. _cpgcopy: https://github.com/altaurog/cpgcopy
 .. _Tox: https://tox.readthedocs.io/en/latest/
