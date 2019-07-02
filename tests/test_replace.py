@@ -1,3 +1,4 @@
+import contextlib
 import psycopg2.errors
 import pytest
 from pgcopy import Replace
@@ -23,6 +24,18 @@ class TestReplaceDefault(db.TemporaryTable):
         assert list(cursor) == [(1, 3)]
 
 
+@contextlib.contextmanager
+def replace(conn, table, exc=psycopg2.errors.IntegrityError):
+    """
+    Wrap Replace context manager and assert
+    exception is thrown on context exit
+    """
+    r = Replace(conn, table)
+    yield r.__enter__()
+    with pytest.raises(exc):
+        r.__exit__(None, None, None)
+
+
 class TestReplaceNotNull(db.TemporaryTable):
     temp = ''
     null = ''
@@ -37,12 +50,10 @@ class TestReplaceNotNull(db.TemporaryTable):
         """
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with pytest.raises(psycopg2.errors.IntegrityError):
-            with Replace(self.conn, self.table) as temp:
-                cursor.execute(sql.format(temp), (1,))
-                cursor.execute('SELECT * FROM {}'.format(temp))
-                self.success = list(cursor) == [(1, None)]
-        assert self.success
+        with replace(self.conn, self.table) as temp:
+            cursor.execute(sql.format(temp), (1,))
+            cursor.execute('SELECT * FROM {}'.format(temp))
+            assert list(cursor) == [(1, None)]
 
 
 class TestReplaceConstraint(db.TemporaryTable):
@@ -55,12 +66,10 @@ class TestReplaceConstraint(db.TemporaryTable):
     def test_replace_constraint(self):
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with pytest.raises(psycopg2.errors.IntegrityError):
-            with Replace(self.conn, self.table) as temp:
-                cursor.execute(sql.format(temp), (1,))
-                cursor.execute('SELECT * FROM {}'.format(temp))
-                self.success = list(cursor) == [(1,)]
-        assert self.success
+        with replace(self.conn, self.table) as temp:
+            cursor.execute(sql.format(temp), (1,))
+            cursor.execute('SELECT * FROM {}'.format(temp))
+            assert list(cursor) == [(1,)]
 
 
 class TestReplaceNamedConstraint(db.TemporaryTable):
@@ -90,13 +99,11 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
         """
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with pytest.raises(psycopg2.errors.IntegrityError):
-            with Replace(self.conn, self.table) as temp:
-                cursor.execute(sql.format(temp), (1,))
-                cursor.execute(sql.format(temp), (1,))
-                cursor.execute('SELECT * FROM {}'.format(temp))
-                self.success = list(cursor) == [(1,), (1,)]
-        assert self.success
+        with replace(self.conn, self.table) as temp:
+            cursor.execute(sql.format(temp), (1,))
+            cursor.execute(sql.format(temp), (1,))
+            cursor.execute('SELECT * FROM {}'.format(temp))
+            assert list(cursor) == [(1,), (1,)]
 
 
 class TestReplaceView(db.TemporaryTable):
