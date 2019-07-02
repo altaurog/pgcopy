@@ -1,5 +1,5 @@
 import contextlib
-import psycopg2.errors
+import psycopg2
 import pytest
 from pgcopy import Replace
 from . import db
@@ -25,7 +25,7 @@ class TestReplaceDefault(db.TemporaryTable):
 
 
 @contextlib.contextmanager
-def replace(conn, table, exc=psycopg2.errors.IntegrityError):
+def replace(conn, table, exc=psycopg2.IntegrityError):
     """
     Wrap Replace context manager and assert
     exception is thrown on context exit
