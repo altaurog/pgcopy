@@ -116,6 +116,21 @@ class TestReplaceView(db.TemporaryTable):
         assert list(cursor) == [(2,)]
 
 
+class TestReplaceViewMultiSchema(db.TemporaryTable):
+    temp = ''
+    datatypes = ['integer']
+
+    def test_replace_view_in_different_schema(self):
+        cursor = self.conn.cursor()
+        viewsql = 'CREATE SCHEMA ns CREATE VIEW v AS SELECT a + 1 FROM {}'
+        cursor.execute(viewsql.format(self.schema_table))
+        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        with Replace(self.conn, self.schema_table) as temp:
+            cursor.execute(sql.format(temp), (1,))
+        cursor.execute('SELECT * FROM ns.v')
+        assert list(cursor) == [(2,)]
+
+
 class TestReplaceTrigger(db.TemporaryTable):
     null = ''
     datatypes = [

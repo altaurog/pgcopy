@@ -115,10 +115,11 @@ class Replace(object):
         self.cursor.execute(trigquery, (self.nameformat(self.table),))
         self.triggers = self.cursor.fetchall()
         viewquery = """
-            SELECT DISTINCT c.relname, pg_get_viewdef(r.ev_class)
+            SELECT DISTINCT n.nspname, c.relname, pg_get_viewdef(r.ev_class)
             FROM pg_rewrite r
             JOIN pg_depend d ON d.objid = r.oid
             JOIN pg_class c ON c.oid = r.ev_class
+            JOIN pg_namespace n ON n.oid = c.relnamespace
             WHERE d.refobjid = %s::regclass;
             """
         self.cursor.execute(viewquery, (self.nameformat(self.table),))
@@ -179,8 +180,9 @@ class Replace(object):
         self.rename_temp_table()
 
     def drop_views(self):
-        for viewname, viewdef in self.views:
-            self.cursor.execute('DROP VIEW {}'.format(self.nameformat(viewname)))
+        for schema, viewname, viewdef in self.views:
+            sql = 'DROP VIEW {}'.format(self.nameformat(viewname, schema))
+            self.cursor.execute(sql)
 
     def drop_defaults(self):
         dropdefsql = 'ALTER TABLE {} ALTER COLUMN "{}" DROP DEFAULT'
@@ -204,8 +206,8 @@ class Replace(object):
 
     def create_views(self):
         viewsql = 'CREATE VIEW {} AS {}'
-        for viewname, viewdef in self.views:
-            sql = viewsql.format(self.nameformat(viewname), viewdef)
+        for schema, viewname, viewdef in self.views:
+            sql = viewsql.format(self.nameformat(viewname, schema), viewdef)
             self.cursor.execute(sql)
 
 
@@ -232,8 +234,8 @@ class Replace(object):
         else:
             return idre(old).sub(new, newsql)
 
-    def nameformat(self, name):
-        return '"{}"."{}"'.format(self.schema, name)
+    def nameformat(self, name, schema=None):
+        return '"{}"."{}"'.format(schema or self.schema, name)
 
 
 class RenameReplace(Replace):
