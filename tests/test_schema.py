@@ -10,7 +10,7 @@ class TestPublicSchema(test_datatypes.TypeMixin):
         bincopy = CopyManager(self.conn, self.table, self.cols)
         bincopy.copy(self.data)
         select_list = ','.join(self.cols)
-        self.cur.execute("SELECT %s from %s" % (select_list, self.table))
+        self.cur.execute("SELECT %s from public.%s" % (select_list, self.table))
         self.checkResults()
 
     def cast(self, v):

@@ -9,7 +9,7 @@ class Test(TypeMixin):
         bincopy = CopyManager(self.conn, self.schema_table, self.cols)
         bincopy.copy(self.data, BytesIO)
         select_list = ','.join(self.cols)
-        self.cur.execute("SELECT %s from %s" % (select_list, self.table))
+        self.cur.execute("SELECT %s from %s" % (select_list, self.schema_table))
         self.checkResults()
 
     def cast(self, v):

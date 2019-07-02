@@ -18,7 +18,7 @@ class TypeMixin(db.TemporaryTable):
         bincopy = CopyManager(self.conn, self.schema_table, self.cols)
         bincopy.copy(self.data)
         select_list = ','.join(self.cols)
-        self.cur.execute("SELECT %s from %s" % (select_list, self.table))
+        self.cur.execute("SELECT %s from %s" % (select_list, self.schema_table))
         self.checkResults()
 
     def checkResults(self):
