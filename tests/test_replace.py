@@ -1,4 +1,5 @@
 import psycopg2.errors
+import pytest
 from pgcopy import Replace
 from . import db
 
@@ -36,14 +37,12 @@ class TestReplaceNotNull(db.TemporaryTable):
         """
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        try:
+        with pytest.raises(psycopg2.errors.IntegrityError):
             with Replace(self.conn, self.table) as temp:
                 cursor.execute(sql.format(temp), (1,))
                 cursor.execute('SELECT * FROM {}'.format(temp))
                 self.success = list(cursor) == [(1, None)]
-            raise RuntimeError("IntegrityError not raised")
-        except psycopg2.errors.IntegrityError:
-            assert self.success
+        assert self.success
 
 
 class TestReplaceConstraint(db.TemporaryTable):
@@ -56,14 +55,12 @@ class TestReplaceConstraint(db.TemporaryTable):
     def test_replace_constraint(self):
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        try:
+        with pytest.raises(psycopg2.errors.IntegrityError):
             with Replace(self.conn, self.table) as temp:
                 cursor.execute(sql.format(temp), (1,))
                 cursor.execute('SELECT * FROM {}'.format(temp))
                 self.success = list(cursor) == [(1,)]
-            raise RuntimeError("IntegrityError not raised")
-        except psycopg2.errors.IntegrityError:
-            assert self.success
+        assert self.success
 
 
 class TestReplaceNamedConstraint(db.TemporaryTable):
@@ -93,15 +90,13 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
         """
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        try:
+        with pytest.raises(psycopg2.errors.IntegrityError):
             with Replace(self.conn, self.table) as temp:
                 cursor.execute(sql.format(temp), (1,))
                 cursor.execute(sql.format(temp), (1,))
                 cursor.execute('SELECT * FROM {}'.format(temp))
                 self.success = list(cursor) == [(1,), (1,)]
-            raise RuntimeError("IntegrityError not raised")
-        except psycopg2.errors.IntegrityError:
-            assert self.success
+        assert self.success
 
 
 class TestReplaceView(db.TemporaryTable):

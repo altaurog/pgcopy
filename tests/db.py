@@ -5,7 +5,7 @@ import psycopg2
 
 from pgcopy import util
 
-from nose.plugins.skip import SkipTest
+import pytest
 
 db_state = {
         'connection_params': {
@@ -100,7 +100,7 @@ class TemporaryTable(object):
                           WHERE  oid = pg_my_temp_schema()""")
         return cursor.fetchall()[0][0]
 
-    def setUp(self):
+    def setup(self):
         self.conn = get_conn()
         self.conn.rollback()
         self.conn.autocommit = False
@@ -116,7 +116,7 @@ class TemporaryTable(object):
         except psycopg2.ProgrammingError as e:
             self.conn.rollback()
             if '42704' == e.pgcode:
-                raise SkipTest('Unsupported datatype')
+                pytest.skip('Unsupported datatype')
 
         schema = self.temp_schema_name() if self.temp else 'public'
         self.schema_table = '{}.{}'.format(schema, self.table)
@@ -128,5 +128,5 @@ class TemporaryTable(object):
         gen = [datagen[t] for t in self.datatypes]
         return [tuple(g(i) for g in gen) for i in range(count)]
 
-    def tearDown(self):
+    def teardown(self):
         self.conn.rollback()

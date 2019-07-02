@@ -7,7 +7,6 @@ import uuid
 if sys.version_info < (3,):
     memoryview = buffer
 
-from nose import tools as test
 from pgcopy import CopyManager, util
 
 from . import db
@@ -28,7 +27,7 @@ class TypeMixin(db.TemporaryTable):
 
     def checkValue(self, expected, found):
         for a, b in zip(self.expected(expected), found):
-            test.eq_(a, self.cast(b))
+            assert a == self.cast(b)
 
     def cast(self, v): return v
 
@@ -133,7 +132,7 @@ class TestBytea(TypeMixin):
     ,]
 
     def cast(self, v):
-        test.assert_is_instance(v, memoryview)
+        assert isinstance(v, memoryview)
         return bytes(v)
 
 class TestTimestamp(TypeMixin):
