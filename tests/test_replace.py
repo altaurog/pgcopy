@@ -8,7 +8,6 @@ class TestReplaceDefault(db.TemporaryTable):
     """
     Defaults are set on temp table immediately.
     """
-    temp = ''
     null = ''
     datatypes = [
         'integer',
@@ -18,9 +17,9 @@ class TestReplaceDefault(db.TemporaryTable):
     def test_replace_with_default(self):
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with Replace(self.conn, self.table) as temp:
+        with Replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
-        cursor.execute('SELECT * FROM {}'.format(self.table))
+        cursor.execute('SELECT * FROM {}'.format(self.schema_table))
         assert list(cursor) == [(1, 3)]
 
 
@@ -37,7 +36,6 @@ def replace(conn, table, exc=psycopg2.IntegrityError):
 
 
 class TestReplaceNotNull(db.TemporaryTable):
-    temp = ''
     null = ''
     datatypes = [
         'integer',
@@ -50,14 +48,13 @@ class TestReplaceNotNull(db.TemporaryTable):
         """
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace(self.conn, self.table) as temp:
+        with replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute('SELECT * FROM {}'.format(temp))
             assert list(cursor) == [(1, None)]
 
 
 class TestReplaceConstraint(db.TemporaryTable):
-    temp = ''
     null = ''
     datatypes = [
         'integer CHECK (a > 5)',
@@ -66,7 +63,7 @@ class TestReplaceConstraint(db.TemporaryTable):
     def test_replace_constraint(self):
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace(self.conn, self.table) as temp:
+        with replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute('SELECT * FROM {}'.format(temp))
             assert list(cursor) == [(1,)]
@@ -80,14 +77,13 @@ class TestReplaceNamedConstraint(db.TemporaryTable):
     ]
 
     def test_replace_constraint_no_name_conflict(self):
-        with Replace(self.conn, self.table) as temp:
+        with Replace(self.conn, self.schema_table) as temp:
             pass
-        with Replace(self.conn, self.table) as temp:
+        with Replace(self.conn, self.schema_table) as temp:
             pass
 
 
 class TestReplaceUniqueIndex(db.TemporaryTable):
-    temp = ''
     null = ''
     datatypes = [
         'integer UNIQUE',
@@ -99,7 +95,7 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
         """
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace(self.conn, self.table) as temp:
+        with replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute(sql.format(temp), (1,))
             cursor.execute('SELECT * FROM {}'.format(temp))
@@ -107,25 +103,20 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
 
 
 class TestReplaceView(db.TemporaryTable):
-    temp = ''
-    null = ''
-    datatypes = [
-        'integer',
-    ]
+    datatypes = ['integer']
 
     def test_replace_with_view(self):
         cursor = self.conn.cursor()
         viewsql = "CREATE VIEW v AS SELECT a + 1 FROM {}"
-        cursor.execute(viewsql.format(self.table))
+        cursor.execute(viewsql.format(self.schema_table))
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with Replace(self.conn, self.table) as temp:
+        with Replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute('SELECT * FROM v')
         assert list(cursor) == [(2,)]
 
 
 class TestReplaceTrigger(db.TemporaryTable):
-    temp = ''
     null = ''
     datatypes = [
         'integer',
@@ -146,17 +137,16 @@ class TestReplaceTrigger(db.TemporaryTable):
             CREATE TRIGGER table_on_ins BEFORE INSERT ON {}
             FOR EACH ROW EXECUTE PROCEDURE table_ins()
         """
-        cursor.execute(trigsql.format(self.table))
+        cursor.execute(trigsql.format(self.schema_table))
         sql = 'INSERT INTO {} ("a", "b") VALUES (%s, %s)'
-        with Replace(self.conn, self.table) as temp:
+        with Replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (1, 1))
-        cursor.execute(sql.format(self.table), (2, 1))
-        cursor.execute('SELECT * FROM {}'.format(self.table))
+        cursor.execute(sql.format(self.schema_table), (2, 1))
+        cursor.execute('SELECT * FROM {}'.format(self.schema_table))
         assert list(cursor) == [(1, 1), (2, 8)]
 
 
 class TestReplaceSequence(db.TemporaryTable):
-    temp = ''
     null = ''
     datatypes = [
         'integer',
@@ -166,10 +156,10 @@ class TestReplaceSequence(db.TemporaryTable):
     def test_replace_with_sequence(self):
         cursor = self.conn.cursor()
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        cursor.executemany(sql.format(self.table), [(10,), (20,)])
-        with Replace(self.conn, self.table) as temp:
+        cursor.executemany(sql.format(self.schema_table), [(10,), (20,)])
+        with Replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (30,))
-            cursor.execute(sql.format(self.table), (40,))
-        cursor.execute(sql.format(self.table), (40,))
-        cursor.execute('SELECT * FROM {}'.format(self.table))
+            cursor.execute(sql.format(self.schema_table), (40,))
+        cursor.execute(sql.format(self.schema_table), (40,))
+        cursor.execute('SELECT * FROM {}'.format(self.schema_table))
         assert list(cursor) == [(30, 3), (40, 5)]
