@@ -28,13 +28,14 @@ class PGCopyBenchmark(db.TemporaryTable):
         self.elapsed_time = default_timer() - start
         self.check_count()
 
-    def tearDown(self):
-        super(PGCopyBenchmark, self).tearDown()
+    def teardown(self):
+        super(PGCopyBenchmark, self).teardown()
         print("%30s: %6.02fs" % (self.__class__.__name__, self.elapsed_time))
 
+
 class ExecuteManyBenchmark(PGCopyBenchmark):
-    def setUp(self):
-        super(ExecuteManyBenchmark, self).setUp()
+    def setup(self):
+        super(ExecuteManyBenchmark, self).setup()
         decode = lambda t: (t[0], t[1], t[2], t[3].decode(), t[4])
         self.data = [decode(d) for d in self.data]
 
@@ -45,3 +46,11 @@ class ExecuteManyBenchmark(PGCopyBenchmark):
                 % (self.schema_table, cols, paramholders)
         cursor = self.conn.cursor()
         cursor.executemany(sql, self.data)
+
+
+if __name__ == '__main__':
+    for cls in ExecuteManyBenchmark, PGCopyBenchmark:
+        benchmark = cls()
+        benchmark.setup()
+        benchmark.benchmark()
+        benchmark.teardown()
