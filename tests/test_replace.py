@@ -124,7 +124,7 @@ class TestReplaceViewMultiSchema(db.TemporaryTable):
         cursor = self.conn.cursor()
         viewsql = 'CREATE SCHEMA ns CREATE VIEW v AS SELECT a + 1 FROM {}'
         cursor.execute(viewsql.format(self.schema_table))
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = 'INSERT INTO public.{} ("a") VALUES (%s)'
         with Replace(self.conn, self.schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute('SELECT * FROM ns.v')
@@ -140,8 +140,9 @@ class TestReplaceTrigger(db.TemporaryTable):
 
     def test_replace_with_trigger(self):
         cursor = self.conn.cursor()
+        cursor.execute("CREATE SCHEMA fs")
         cursor.execute("""
-            CREATE FUNCTION table_ins() RETURNS trigger AS $table_ins$
+            CREATE FUNCTION fs.table_ins() RETURNS trigger AS $table_ins$
             BEGIN
                 NEW.b := NEW.a * 4;
                 RETURN NEW;
@@ -150,7 +151,7 @@ class TestReplaceTrigger(db.TemporaryTable):
         """)
         trigsql = """
             CREATE TRIGGER table_on_ins BEFORE INSERT ON {}
-            FOR EACH ROW EXECUTE PROCEDURE table_ins()
+            FOR EACH ROW EXECUTE PROCEDURE fs.table_ins()
         """
         cursor.execute(trigsql.format(self.schema_table))
         sql = 'INSERT INTO {} ("a", "b") VALUES (%s, %s)'

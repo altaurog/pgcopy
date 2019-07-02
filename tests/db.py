@@ -13,6 +13,7 @@ db_state = {
             'host': os.getenv('POSTGRES_HOST'),
             'user': os.getenv('POSTGRES_USER'),
             'password': os.getenv('POSTGRES_PASSWORD'),
+            'options': '-csearch_path=',
         },
         'conn': None,
         'drop': False,
@@ -110,8 +111,10 @@ class TemporaryTable(object):
         colsql = [(c, t, self.null) for c, t in zip(self.cols, self.datatypes)]
         try:
             collist = ', '.join(map(' '.join, colsql))
-            template = "CREATE {} TABLE {} ({})"
-            cmd = template.format(self.temp, self.table, collist)
+            template = "CREATE {} TABLE {}{} ({})"
+            cmd = template.format(
+                self.temp, '' if self.temp else 'public.', self.table, collist
+            )
             self.cur.execute(cmd)
         except psycopg2.ProgrammingError as e:
             self.conn.rollback()
