@@ -1,19 +1,20 @@
-FROM python:3-slim
+FROM debian:stable-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        libpq-dev \
         netcat \
-        gcc  # need gcc to compile psycopg2
+        python \
+        python-pip \
+        python-psycopg2 \
+        python-pytest \
+        python-setuptools
 
-COPY ./ /opt/pgcopy
+COPY ./ /opt/install
+WORKDIR /opt/install
+RUN pip install .
+RUN tar c tests/*.py | tar x -C /opt
 
-RUN pip install -e /opt/pgcopy && \
-    pip install nose
-
-WORKDIR /opt/pgcopy
-
-CMD nosetests
+WORKDIR /opt
