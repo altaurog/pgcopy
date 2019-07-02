@@ -63,17 +63,19 @@ class Replace(object):
     def inspect(self):
         defquery = """
             SELECT attname, pg_get_expr(adbin, adrelid)
-            FROM pg_attribute
-            JOIN pg_attrdef ON attrelid = adrelid AND adnum = attnum
+            FROM pg_catalog.pg_attribute
+            JOIN pg_catalog.pg_attrdef ON attrelid = adrelid AND adnum = attnum
             WHERE adnum > 0
-            AND attrelid = %s::regclass;
+            AND attrelid = %s::regclass
             """
         self.cursor.execute(defquery, (self.nameformat(self.table),))
         self.defaults = self.cursor.fetchall()
         seqquery = """
-            SELECT attname, relname FROM pg_class
-            JOIN pg_depend ON (objid = pg_class.oid)
-            JOIN pg_attribute ON (attnum=refobjsubid AND attrelid=refobjid)
+            SELECT attname, relname
+            FROM pg_catalog.pg_class c
+            JOIN pg_catalog.pg_depend ON (objid = c.oid)
+            JOIN pg_catalog.pg_attribute
+                ON (attnum=refobjsubid AND attrelid=refobjid)
             WHERE relkind = 'S'
             AND refobjid = %s::regclass
             """
@@ -116,10 +118,10 @@ class Replace(object):
         self.triggers = self.cursor.fetchall()
         viewquery = """
             SELECT DISTINCT n.nspname, c.relname, pg_get_viewdef(r.ev_class)
-            FROM pg_rewrite r
-            JOIN pg_depend d ON d.objid = r.oid
-            JOIN pg_class c ON c.oid = r.ev_class
-            JOIN pg_namespace n ON n.oid = c.relnamespace
+            FROM pg_catalog.pg_rewrite r
+            JOIN pg_catalog.pg_depend d ON d.objid = r.oid
+            JOIN pg_catalog.pg_class c ON c.oid = r.ev_class
+            JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
             WHERE d.refobjid = %s::regclass;
             """
         self.cursor.execute(viewquery, (self.nameformat(self.table),))
