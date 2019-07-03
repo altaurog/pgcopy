@@ -4,7 +4,7 @@ services:
     build:
       context: ./
       dockerfile: ./docker/Dockerfile
-    command: bash -c "while ! nc -z pgsql 5432; do sleep 1; done; pip freeze; pytest tests/"
+    command: bash -c "while ! nc -z pgsql 5432; do sleep 1; done; pip freeze; python3 -m pytest tests/"
     container_name: pgcopy
     environment:
       - POSTGRES_DB=pgcopy_test
@@ -15,7 +15,7 @@ services:
       - pgsql
 
   pgsql:
-    image: postgres:11
+    image: postgres:9.5
     environment:
       - POSTGRES_DB=pgcopy_test
       - POSTGRES_USER=postgres

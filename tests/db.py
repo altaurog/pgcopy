@@ -10,6 +10,7 @@ import pytest
 db_state = {
         'connection_params': {
             'dbname': os.getenv('POSTGRES_DB', 'pgcopy_test'),
+            'port': int(os.getenv('POSTGRES_PORT', '5432')),
             'host': os.getenv('POSTGRES_HOST'),
             'user': os.getenv('POSTGRES_USER'),
             'password': os.getenv('POSTGRES_PASSWORD'),
