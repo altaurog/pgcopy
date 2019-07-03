@@ -2,51 +2,11 @@ sudo: required
 language: python
 matrix:
     include:
-        - python: 2.7
-          dist: precise
-          env: TOXENV=py27
-          addons:
-              postgresql: "9.1"
-        - python: 2.7
-          dist: precise
-          env: TOXENV=py27
-          addons:
-              postgresql: "9.2"
-        - python: 2.7
-          dist: precise
-          env: TOXENV=py27
-          addons:
-              postgresql: "9.3"
-        - python: 2.7
-          dist: precise
-          env: TOXENV=py27
-          addons:
-              postgresql: "9.4"
-        - python: 3.4
-          dist: precise
-          env: TOXENV=py34
-          addons:
-              postgresql: "9.5"
-        - python: 3.5
-          dist: precise
-          env: TOXENV=py35
-          addons:
-              postgresql: "9.5"
         - python: 3.6
           dist: trusty
           env: TOXENV=py36
           addons:
               postgresql: "9.5"
-        - python: 3.7
-          dist: xenial
-          env: TOXENV=py37
-          addons:
-              postgresql: "9.6"
-        - python: 3.7
-          dist: xenial
-          env: TOXENV=py37
-          addons:
-              postgresql: "10"
 install:
     - pip install tox
 script:
