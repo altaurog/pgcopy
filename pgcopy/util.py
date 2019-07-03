@@ -154,25 +154,25 @@ class Replace(object):
                 self.nameformat(self.temp_name), newname, condef
             ))
             if 'p' == contype:
-                self.rename.append(('INDEX', self.nameformat(newname), conname))
+                pass  # self.rename.append(('INDEX', self.nameformat(newname), conname))
 
     def create_indices(self):
         for i, (oldidxname, indexsql) in enumerate(self.indices):
             newidxname = self.newname('idx', i)
             newsql = self.sqlrename(indexsql, oldidxname, newidxname)
             self.cursor.execute(newsql)
-            self.rename.append(('INDEX', self.nameformat(newidxname), oldidxname))
+            # self.rename.append(('INDEX', self.nameformat(newidxname), oldidxname))
 
     def create_triggers(self):
         for i, (oldtrigname, trigsql) in enumerate(self.triggers):
             newtrigname = self.newname('tg', i)
             newsql = self.sqlrename(trigsql, oldtrigname, newtrigname)
             self.cursor.execute(newsql)
-            self.rename.append((
-                'TRIGGER',
-                '%s ON %s' % (newtrigname, self.nameformat(self.table)),
-                oldtrigname,
-            ))
+            # self.rename.append((
+            #     'TRIGGER',
+            #     '%s ON %s' % (newtrigname, self.nameformat(self.table)),
+            #     oldtrigname,
+            # ))
 
     def swap(self):
         self.drop_views()
