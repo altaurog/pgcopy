@@ -176,9 +176,13 @@ class Replace(object):
 
     def swap(self):
         self.cursor.execute("""
-            SELECT c.relkind, n.nspname, c.relname
+            SELECT c.relkind, n.nspname, c.relname, ic.relname
             FROM pg_catalog.pg_class c
             JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+            LEFT JOIN pg_catalog.pg_index i
+                ON c.oid = i.indexrelid
+            LEFT JOIN pg_catalog.pg_class ic
+                ON i.indrelid = ic.oid
             WHERE n.nspname = %s
         """, (self.schema,))
         print()
