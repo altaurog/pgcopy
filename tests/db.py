@@ -14,7 +14,6 @@ db_state = {
             'host': os.getenv('POSTGRES_HOST'),
             'user': os.getenv('POSTGRES_USER'),
             'password': os.getenv('POSTGRES_PASSWORD'),
-            'options': '-csearch_path=',
         },
         'conn': None,
         'drop': False,
