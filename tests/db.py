@@ -22,8 +22,9 @@ db_state = {
     }
 
 def connect(**kwargs):
-    kwargs = {**db_state['connection_params'], **kwargs}
-    conn = psycopg2.connect(connection_factory=LoggingConnection, **kwargs)
+    kw = db_state['connection_params'].copy()
+    kw.update(kwargs)
+    conn = psycopg2.connect(connection_factory=LoggingConnection, **kw)
     conn.initialize(sys.stderr)
     return conn
 
