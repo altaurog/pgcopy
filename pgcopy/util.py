@@ -40,7 +40,7 @@ class Replace(object):
             self.schema, self.table = table.rsplit('.', 1)
         else:
             self.schema, self.table = 'public', table
-        self.name_re = idre(table)
+        self.name_re = idre(self.table)
         self.temp_name = self.newname()
         self.rename = [('TABLE', self.nameformat(self.temp_name), self.table)]
         self.inspect()
@@ -160,6 +160,8 @@ class Replace(object):
         for i, (oldidxname, indexsql) in enumerate(self.indices):
             newidxname = self.newname('idx', i)
             newsql = self.sqlrename(indexsql, oldidxname, newidxname)
+            print(indexsql)
+            print(newsql)
             self.cursor.execute(newsql)
             # self.rename.append(('INDEX', self.nameformat(newidxname), oldidxname))
 
