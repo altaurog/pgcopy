@@ -94,11 +94,11 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
         Not-null constraint is added on exit
         """
         cursor = self.conn.cursor()
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = 'INSERT INTO {}.{} ("a") VALUES (%s)'
         with replace(self.conn, self.schema_table) as temp:
-            cursor.execute(sql.format(temp), (1,))
-            cursor.execute(sql.format(temp), (1,))
-            cursor.execute('SELECT * FROM {}'.format(temp))
+            cursor.execute(sql.format(self.schema, temp), (1,))
+            cursor.execute(sql.format(self.schema, temp), (1,))
+            cursor.execute('SELECT * FROM {}.{}'.format(self.schema, temp))
             assert list(cursor) == [(1,), (1,)]
 
 
