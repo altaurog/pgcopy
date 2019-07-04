@@ -154,42 +154,27 @@ class Replace(object):
                 self.nameformat(self.temp_name), newname, condef
             ))
             if 'p' == contype:
-                pass  # self.rename.append(('INDEX', self.nameformat(newname), conname))
+                self.rename.append(('INDEX', self.nameformat(newname), conname))
 
     def create_indices(self):
         for i, (oldidxname, indexsql) in enumerate(self.indices):
             newidxname = self.newname('idx', i)
             newsql = self.sqlrename(indexsql, oldidxname, newidxname)
-            print(indexsql)
-            print(newsql)
             self.cursor.execute(newsql)
-            # self.rename.append(('INDEX', self.nameformat(newidxname), oldidxname))
+            self.rename.append(('INDEX', self.nameformat(newidxname), oldidxname))
 
     def create_triggers(self):
         for i, (oldtrigname, trigsql) in enumerate(self.triggers):
             newtrigname = self.newname('tg', i)
             newsql = self.sqlrename(trigsql, oldtrigname, newtrigname)
             self.cursor.execute(newsql)
-            # self.rename.append((
-            #     'TRIGGER',
-            #     '%s ON %s' % (newtrigname, self.nameformat(self.table)),
-            #     oldtrigname,
-            # ))
+            self.rename.append((
+                'TRIGGER',
+                '%s ON %s' % (newtrigname, self.nameformat(self.table)),
+                oldtrigname,
+            ))
 
     def swap(self):
-        self.cursor.execute("""
-            SELECT c.relkind, n.nspname, c.relname, ic.relname
-            FROM pg_catalog.pg_class c
-            JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-            LEFT JOIN pg_catalog.pg_index i
-                ON c.oid = i.indexrelid
-            LEFT JOIN pg_catalog.pg_class ic
-                ON i.indrelid = ic.oid
-            WHERE n.nspname = %s
-        """, (self.schema,))
-        print()
-        for row in self.cursor:
-            print(row)
         self.drop_views()
         self.drop_defaults()
         self.move_sequences()
@@ -219,16 +204,6 @@ class Replace(object):
     def rename_temp_table(self):
         template = 'ALTER {} {} RENAME TO {}'
         for obj_type, oldname, newname in self.rename:
-            self.cursor.execute("""
-                SELECT c.relkind, n.nspname, c.relname
-                FROM pg_catalog.pg_class c
-                JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-                WHERE n.nspname = %s
-            """, (self.schema,))
-            print()
-            for row in self.cursor:
-                print(row)
-            print((obj_type, oldname, newname))
             self.cursor.execute(template.format(obj_type, oldname, newname))
 
     def create_views(self):
@@ -281,7 +256,6 @@ class RenameReplace(Replace):
     def rename_temp_table(self):
         sql = 'ALTER %s "%s" RENAME TO "%s"'
         for objtype, temp, orig in self.rename:
-            print(objtype, temp, orig)
             new_name = self.xform(orig)
             self.cursor.execute(sql % (objtype, orig, new_name))
         super(RenameReplace, self).rename_temp_table()
