@@ -1,7 +1,9 @@
 import os
+import sys
 from datetime import datetime, date, timedelta
 import hashlib
 import psycopg2
+from psycopg2.extras import LoggingConnection
 
 from pgcopy import util
 
@@ -14,11 +16,17 @@ db_state = {
             'host': os.getenv('POSTGRES_HOST'),
             'user': os.getenv('POSTGRES_USER'),
             'password': os.getenv('POSTGRES_PASSWORD'),
-            'options': '-csearch_path=',
         },
         'conn': None,
         'drop': False,
     }
+
+def connect(**kwargs):
+    kwargs = {**db_state['connection_params'], **kwargs}
+    conn = psycopg2.connect(connection_factory=LoggingConnection, **kwargs)
+    conn.initialize(sys.stderr)
+    return conn
+
 
 def get_conn():
     conn = db_state.get('conn')
@@ -30,12 +38,12 @@ def get_conn():
 def create_db():
     "connect to test db"
     try:
-        return psycopg2.connect(**db_state['connection_params'])
+        return connect()
     except psycopg2.OperationalError as exc:
         nosuch_db = 'database "%s" does not exist' % db_state['connection_params']['dbname']
         if nosuch_db in str(exc):
             try:
-                master = psycopg2.connect(database='postgres')
+                master = connect(dbname='postgres')
                 master.rollback()
                 master.autocommit = True
                 cursor = master.cursor()
@@ -48,7 +56,7 @@ def create_db():
                             + '.\nThe error is: %s' % exc)
                 raise RuntimeError(message)
             else:
-                conn = psycopg2.connect(**db_state['connection_params'])
+                conn = connect()
                 db_state['drop'] = True
                 return conn
 
@@ -57,7 +65,7 @@ def drop_db():
     if not db_state['drop']:
         return
     get_conn().close()
-    master = psycopg2.connect(database='postgres')
+    master = connect(dbname='postgres')
     master.rollback()
     master.autocommit = True
     cursor = master.cursor()
@@ -122,8 +130,8 @@ class TemporaryTable(object):
             if '42704' == e.pgcode:
                 pytest.skip('Unsupported datatype')
 
-        schema = self.temp_schema_name() if self.temp else 'public'
-        self.schema_table = '{}.{}'.format(schema, self.table)
+        self.schema = self.temp_schema_name() if self.temp else 'public'
+        self.schema_table = '{}.{}'.format(self.schema, self.table)
 
         if self.data is None and self.record_count > 0:
             self.data = self.generate_data(self.record_count)
