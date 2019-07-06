@@ -99,7 +99,7 @@ datagen = {
 colname = lambda i: chr(ord('a') + i)
 
 class TemporaryTable(object):
-    temp = 'TEMPORARY'
+    tempschema = True
     null = 'NOT NULL'
     data = None
     record_count = 0
@@ -118,24 +118,28 @@ class TemporaryTable(object):
         self.cur = self.conn.cursor()
         self.table = self.__class__.__name__.lower()
         self.cols = [colname(i) for i in range(len(self.datatypes))]
-        colsql = [(c, t, self.null) for c, t in zip(self.cols, self.datatypes)]
         try:
-            collist = ', '.join(map(' '.join, colsql))
-            template = "CREATE {} TABLE {}{} ({})"
-            cmd = template.format(
-                self.temp, '' if self.temp else 'public.', self.table, collist
-            )
-            self.cur.execute(cmd)
+            self.cur.execute(self.create_sql(self.tempschema))
         except psycopg2.ProgrammingError as e:
             self.conn.rollback()
             if '42704' == e.pgcode:
                 pytest.skip('Unsupported datatype')
 
-        self.schema = self.temp_schema_name() if self.temp else 'public'
+        if self.tempschema:
+            self.schema = self.temp_schema_name()
+        else:
+            self.schema = 'public'
         self.schema_table = '{}.{}'.format(self.schema, self.table)
 
         if self.data is None and self.record_count > 0:
             self.data = self.generate_data(self.record_count)
+
+    def create_sql(self, tempschema=None):
+        colsql = [(c, t, self.null) for c, t in zip(self.cols, self.datatypes)]
+        collist = ', '.join(map(' '.join, colsql))
+        if tempschema:
+            return "CREATE TEMPORARY TABLE {} ({})".format(self.table, collist)
+        return "CREATE TABLE public.{} ({})".format(self.table, collist)
 
     def generate_data(self, count):
         gen = [datagen[t] for t in self.datatypes]

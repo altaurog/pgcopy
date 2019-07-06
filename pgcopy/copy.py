@@ -138,7 +138,7 @@ class CopyManager(object):
         if '.' in table:
             self.schema, self.table = table.split('.', 1)
         else:
-            self.schema, self.table = 'public', table
+            self.schema, self.table = util.get_schema(conn, table), table
         self.cols = cols
         self.compile()
 

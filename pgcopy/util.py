@@ -4,6 +4,17 @@ import string
 from datetime import datetime
 from pytz import UTC
 
+def get_schema(conn, table):
+    cur = conn.cursor()
+    query = """
+        SELECT n.nspname, c.relname
+        FROM pg_catalog.pg_class c
+        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.oid = %s::regclass
+        """
+    cur.execute(query, (table,))
+    return cur.fetchone()[0]
+
 def to_utc(dt):
     if not isinstance(dt, datetime):
         dt = datetime(dt.year, dt.month, dt.day)
@@ -39,7 +50,7 @@ class Replace(object):
         if '.' in table:
             self.schema, self.table = table.rsplit('.', 1)
         else:
-            self.schema, self.table = 'public', table
+            self.schema, self.table = get_schema(connection, table), table
         self.name_re = idre(self.table)
         self.temp_name = self.newname()
         self.rename = [('TABLE', self.nameformat(self.temp_name), self.table)]

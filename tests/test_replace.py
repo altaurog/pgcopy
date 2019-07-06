@@ -4,6 +4,21 @@ import pytest
 from pgcopy import Replace
 from . import db
 
+
+class TestReplaceFallbackSchema(db.TemporaryTable):
+    datatypes = ['integer']
+
+    def test_fallback_schema_honors_search_path(self):
+        cursor = self.conn.cursor()
+        cursor.execute(self.create_sql(tempschema=False))
+        cursor.execute('SET search_path TO {}'.format(self.schema))
+        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        with Replace(self.conn, self.table) as temp:
+            cursor.execute(sql.format(temp), (1,))
+        cursor.execute('SELECT * FROM {}'.format(self.schema_table))
+        assert list(cursor) == [(1,)]
+
+
 class TestReplaceDefault(db.TemporaryTable):
     """
     Defaults are set on temp table immediately.
@@ -70,7 +85,6 @@ class TestReplaceConstraint(db.TemporaryTable):
 
 
 class TestReplaceNamedConstraint(db.TemporaryTable):
-    temp = ''
     null = ''
     datatypes = [
         'integer CONSTRAINT asize CHECK (a > 5)',
@@ -117,7 +131,7 @@ class TestReplaceView(db.TemporaryTable):
 
 
 class TestReplaceViewMultiSchema(db.TemporaryTable):
-    temp = ''
+    tempschema = False
     datatypes = ['integer']
 
     def test_replace_view_in_different_schema(self):
