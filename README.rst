@@ -15,7 +15,7 @@ To install::
     $ pip install pgcopy
 
 pgcopy requires pytz_ and the psycopg2_ db adapter.
-nose_ is required to run the tests.
+pytest_ is required to run the tests.
 
 Use
 ---------
