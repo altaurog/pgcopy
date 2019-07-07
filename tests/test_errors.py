@@ -4,8 +4,7 @@ from . import db
 
 class TestErrors(db.TemporaryTable):
     datatypes = ['integer']
-    def test_nosuchcolumn(self):
-        conn = self.conn
+    def test_nosuchcolumn(self, conn, schema_table):
         col = self.cols[0] + '_does_not_exist'
         with pytest.raises(ValueError):
-            CopyManager(conn, self.schema_table, [col])
+            CopyManager(conn, schema_table, [col])

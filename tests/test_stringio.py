@@ -5,12 +5,12 @@ from .test_datatypes import TypeMixin
 class Test(TypeMixin):
     datatypes = ['integer', 'bool', 'varchar(12)']
 
-    def test_copy(self):
-        bincopy = CopyManager(self.conn, self.schema_table, self.cols)
-        bincopy.copy(self.data, BytesIO)
+    def test_copy(self, conn, cursor, schema_table, data):
+        bincopy = CopyManager(conn, schema_table, self.cols)
+        bincopy.copy(data, BytesIO)
         select_list = ','.join(self.cols)
-        self.cur.execute("SELECT %s from %s" % (select_list, self.schema_table))
-        self.checkResults()
+        cursor.execute("SELECT %s from %s" % (select_list, schema_table))
+        self.checkResults(cursor, data)
 
     def cast(self, v):
         try:

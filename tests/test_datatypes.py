@@ -14,16 +14,16 @@ from . import db
 class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     record_count = 3
-    def test_type(self):
-        bincopy = CopyManager(self.conn, self.schema_table, self.cols)
-        bincopy.copy(self.data)
+    def test_type(self, conn, cursor, schema_table, data):
+        bincopy = CopyManager(conn, schema_table, self.cols)
+        bincopy.copy(data)
         select_list = ','.join(self.cols)
-        self.cur.execute("SELECT %s from %s" % (select_list, self.schema_table))
-        self.checkResults()
+        cursor.execute("SELECT %s from %s" % (select_list, schema_table))
+        self.checkResults(cursor, data)
 
-    def checkResults(self):
-        for rec in self.data:
-            self.checkValue(rec, self.cur.fetchone())
+    def checkResults(self, cursor, data):
+        for rec in data:
+            self.checkValue(rec, cursor.fetchone())
 
     def checkValue(self, expected, found):
         for a, b in zip(self.expected(expected), found):
@@ -163,8 +163,8 @@ class TestNumericNan(TypeMixin):
     datatypes = ['numeric']
     data = [(decimal.Decimal('NaN'),),]
 
-    def checkResults(self):
-        assert self.cur.fetchone()[0].is_nan()
+    def checkResults(self, cursor, data):
+        assert cursor.fetchone()[0].is_nan()
 
 
 class TestUUID(TypeMixin):
