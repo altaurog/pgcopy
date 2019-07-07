@@ -33,7 +33,7 @@ def connect(**kwargs):
 def create_db():
     "connect to test db"
     try:
-        connect()
+        connect().close()
         return False
     except psycopg2.OperationalError as exc:
         nosuch_db = 'database "%s" does not exist' % connection_params['dbname']
