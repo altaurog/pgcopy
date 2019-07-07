@@ -88,7 +88,9 @@ def conn(request, db):
 
 @pytest.fixture
 def cursor(conn):
-    return conn.cursor()
+    cur = conn.cursor()
+    yield cur
+    cur.close()
 
 
 @pytest.fixture
