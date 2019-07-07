@@ -24,20 +24,16 @@ MAX_INT64 = 0xFFFFFFFFFFFFFFFF
 
 def simple_formatter(fmt):
     size = struct.calcsize('>' + fmt)
-    return lambda _, val: ('i' + fmt, (size, val))
+    return lambda val: ('i' + fmt, (size, val))
 
-def str_formatter(_, val):
+def str_formatter(val):
     size = len(val)
     return ('i%ss' % size, (size, val))
-
-def maxsize_formatter(maxsize, val):
-    size = min(len(val), maxsize - 4) if maxsize >= 0 else len(val)
-    return ('i%ss' % size, (size, val[:size]))
 
 psql_epoch = 946684800
 psql_epoch_date = date(2000, 1, 1)
 
-def timestamp(_, dt):
+def timestamp(dt):
     'get microseconds since 2000-01-01 00:00'
     # see http://stackoverflow.com/questions/2956886/
     dt = util.to_utc(dt)
@@ -47,11 +43,11 @@ def timestamp(_, dt):
     val = ((unix_timestamp - psql_epoch) * 1000000) + dt.microsecond
     return ('iq', (8, val))
 
-def datestamp(_, d):
+def datestamp(d):
     'days since 2000-01-01'
     return ('ii', (4, (d - psql_epoch_date).days))
 
-def numeric(_, n):
+def numeric(n):
     """
     NBASE = 1000
     ndigits = total number of base-NBASE digits
@@ -95,22 +91,15 @@ def ndig(a):
     return res
 
 
-def jsonb_formatter(_, val):
+def jsonb_formatter(val):
     size = len(val)
     # first char must me binary format of jsonb in postgresql
     return 'ib%is' % size, (size + 1, 1, val)
 
 
-def uuid_formatter(_, guid):
+def uuid_formatter(guid):
     return 'i2Q', (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
 
-
-def null(formatter):
-    def nullcheck(val):
-        if val is None:
-            return ('i', (-1,))
-        return formatter(val)
-    return nullcheck
 
 type_formatters = {
     'bool': simple_formatter('?'),
@@ -119,8 +108,8 @@ type_formatters = {
     'int8': simple_formatter('q'),
     'float4' : simple_formatter('f'),
     'float8': simple_formatter('d'),
-    'varchar': maxsize_formatter,
-    'bpchar': maxsize_formatter,
+    'varchar': str_formatter,
+    'bpchar': str_formatter,
     'bytea': str_formatter,
     'text': str_formatter,
     'json': str_formatter,
@@ -131,6 +120,23 @@ type_formatters = {
     'numeric': numeric,
     'uuid': uuid_formatter,
 }
+
+def null(formatter):
+    def nullcheck(val):
+        if val is None:
+            return ('i', (-1,))
+        return formatter(val)
+    return nullcheck
+
+def maxsize(maxsize, formatter):
+    def _maxsize(v):
+        # postgres reports size + 4
+        size = min(len(v), maxsize - 4) if maxsize >= 0 else len(v)
+        return formatter(v[:size])
+    return _maxsize
+
+maxsize.types = ('varchar', 'bpchar')
+
 
 class CopyManager(object):
     def __init__(self, conn, table, cols):
@@ -151,9 +157,11 @@ class CopyManager(object):
                 message = '"%s" is not a column of table "%s"."%s"'
                 raise ValueError(message % (column, self.schema, self.table))
             coltype, typemod, notnull = type_info
-            f = functools.partial(type_formatters[coltype], typemod)
+            f = type_formatters[coltype]
             if not notnull:
                 f = null(f)
+            if coltype in maxsize.types:
+                f = maxsize(typemod, f)
             self.formatters.append(f)
 
     def copy(self, data, fobject_factory=tempfile.TemporaryFile):
