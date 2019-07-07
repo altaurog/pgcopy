@@ -16,10 +16,10 @@ connection_params = {
 
 @pytest.fixture(scope='session')
 def db():
-    drop, conn = create_db()
-    yield conn
+    drop = create_db()
+    yield
     if drop:
-        drop_db(conn)
+        drop_db()
 
 
 def connect(**kwargs):
@@ -33,7 +33,8 @@ def connect(**kwargs):
 def create_db():
     "connect to test db"
     try:
-        return False, connect()
+        connect()
+        return False
     except psycopg2.OperationalError as exc:
         nosuch_db = 'database "%s" does not exist' % connection_params['dbname']
         if nosuch_db in str(exc):
@@ -51,12 +52,11 @@ def create_db():
                             + '.\nThe error is: %s' % exc)
                 raise RuntimeError(message)
             else:
-                return True, connect()
+                return True
 
 
-def drop_db(conn):
+def drop_db():
     "Drop test db"
-    conn.close()
     master = connect(dbname='postgres')
     master.rollback()
     master.autocommit = True
@@ -68,23 +68,28 @@ def drop_db(conn):
 
 @pytest.fixture
 def conn(request, db):
-    db.autocommit = False
-    cur = db.cursor()
+    conn = connect()
+    conn.autocommit = False
+    conn.set_client_encoding(getattr(request, 'param', 'UTF8'))
+    cur = conn.cursor()
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         try:
             cur.execute(inst.create_sql(inst.tempschema))
         except psycopg2.ProgrammingError as e:
-            db.rollback()
+            conn.rollback()
             if '42704' == e.pgcode:
                 pytest.skip('Unsupported datatype')
     cur.close()
-    yield db
-    db.rollback()
+    yield conn
+    conn.rollback()
+    conn.close()
+
 
 @pytest.fixture
 def cursor(conn):
     return conn.cursor()
+
 
 @pytest.fixture
 def schema(request, cursor):
@@ -99,15 +104,16 @@ def schema(request, cursor):
         """)
         return cursor.fetchall()[0][0]
 
+
 @pytest.fixture
 def schema_table(request, schema):
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         return '{}.{}'.format(schema, inst.table)
 
+
 @pytest.fixture
 def data(request):
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         return inst.data or inst.generate_data(inst.record_count)
-
