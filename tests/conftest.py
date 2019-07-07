@@ -19,7 +19,10 @@ def db():
     drop = create_db()
     yield
     if drop:
-        drop_db()
+        try:
+            drop_db()
+        except psycopg2.OperationalError:
+            pass
 
 
 def connect(**kwargs):
