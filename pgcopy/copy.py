@@ -12,6 +12,7 @@ try:
 except ImportError:
     pass
 
+from psycopg2.extensions import encodings
 from . import inspect, util
 
 __all__ = ['CopyManager']
@@ -137,6 +138,15 @@ def maxsize(maxsize, formatter):
 
 maxsize.types = ('varchar', 'bpchar')
 
+def encode(encoding, formatter):
+    def _encode(v):
+        try:
+            return formatter(v.encode(encoding))
+        except AttributeError:
+            return formatter(v)
+    return _encode
+
+encode.types = ('varchar', 'text', 'json')
 
 class CopyManager(object):
     def __init__(self, conn, table, cols):
@@ -160,6 +170,8 @@ class CopyManager(object):
             f = type_formatters[coltype]
             if not notnull:
                 f = null(f)
+            if coltype in encode.types:
+                f = encode(encodings[self.conn.encoding], f)
             if coltype in maxsize.types:
                 f = maxsize(typemod, f)
             self.formatters.append(f)
