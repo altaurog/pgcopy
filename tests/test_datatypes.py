@@ -75,6 +75,11 @@ class TestNull(TypeMixin):
     datatypes = ['integer']
     data = [(1,), (2,), (None,)]
 
+class TestNullVarchar(TypeMixin):
+    null = 'NULL'
+    datatypes = ['varchar(12)']
+    data = [('None',), (None,)]
+
 class TestVarchar(TypeMixin):
     datatypes = ['varchar(12)', 'varchar']
 

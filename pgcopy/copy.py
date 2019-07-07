@@ -168,12 +168,12 @@ class CopyManager(object):
                 raise ValueError(message % (column, self.schema, self.table))
             coltype, typemod, notnull = type_info
             f = type_formatters[coltype]
-            if not notnull:
-                f = null(f)
             if coltype in encode.types:
                 f = encode(encodings[self.conn.encoding], f)
             if coltype in maxsize.types:
                 f = maxsize(typemod, f)
+            if not notnull:
+                f = null(f)
             self.formatters.append(f)
 
     def copy(self, data, fobject_factory=tempfile.TemporaryFile):
