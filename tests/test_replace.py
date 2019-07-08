@@ -37,7 +37,7 @@ class TestReplaceDefault(db.TemporaryTable):
 
 
 @contextlib.contextmanager
-def replace(conn, table, exc=psycopg2.IntegrityError):
+def replace_raises(conn, table, exc=psycopg2.IntegrityError):
     """
     Wrap Replace context manager and assert
     exception is thrown on context exit
@@ -60,7 +60,7 @@ class TestReplaceNotNull(db.TemporaryTable):
         Not-null constraint is added on exit
         """
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace(conn, schema_table) as temp:
+        with replace_raises(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute('SELECT * FROM {}'.format(temp))
             assert list(cursor) == [(1, None)]
@@ -74,7 +74,7 @@ class TestReplaceConstraint(db.TemporaryTable):
 
     def test_replace_constraint(self, conn, cursor, schema_table):
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace(conn, schema_table) as temp:
+        with replace_raises(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute('SELECT * FROM {}'.format(temp))
             assert list(cursor) == [(1,)]
@@ -104,7 +104,7 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
         Not-null constraint is added on exit
         """
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace(conn, schema_table) as temp:
+        with replace_raises(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute(sql.format(temp), (1,))
             cursor.execute('SELECT * FROM {}'.format(temp))
