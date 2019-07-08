@@ -17,6 +17,9 @@ To install::
 pgcopy requires pytz_ and the psycopg2_ db adapter.
 pytest_ is required to run the tests.
 
+pgcopy is currently tested with python versions 2.7, 3.4 -- 3.7 and
+PostgreSQL versions 9.1 - 11
+
 Use
 ---------
 
@@ -78,15 +81,28 @@ Currently the following PostgreSQL datatypes are supported:
 * jsonb
 * uuid
 
-Unicode strings in the data to be inserted (all values of type ``str`` in
-Python 3) should be encoded as ``bytes`` before passing them to ``copy``.
-Values intended to be ``NULL`` in the database should be encoded as ``None``
-rather than as empty strings.
-
 .. note::
 
     PostgreSQL numeric does not support ``Decimal('Inf')`` or
     ``Decimal('-Inf')``.  pgcopy serializes these as ``NaN``.
+
+Encoding
+"""""""""
+As of v1.4, encoding is handled automatically for ``char``,
+``varchar``, ``text``, and ``json`` types.  Python ``bytes`` may also be
+used, provided the encoding matches that of the db connection.
+
+No encoding is performed for data to be inserted into ``bytea`` or
+``jsonb`` types.
+
+String Length
+""""""""""""""
+Strings will be silently truncated to fit the database columns.
+
+Null
+""""
+Values intended to be ``NULL`` in the database should be encoded as ``None``
+rather than as empty strings.
 
 Testing
 --------
@@ -96,7 +112,7 @@ For a fast test run using current environment, use pytest_::
     $ pytest tests
 
 For more thorough testing, Tox_ configuration will run tests on python
-versions 2.7 and 3.4 - 3.7::
+versions 2.7 and 3.4 -- 3.7::
 
     $ tox
 
@@ -138,6 +154,9 @@ then replaces the old table with the new.  It can be used so::
 Names of foreign key and check constraints will be mangled.
 As of v0.6 there is also ``pgcopy.util.RenameReplace``, which instead of
 dropping the original objects renames them using a transformation function.
+
+As of v1.4, a db schema can be specified to ``Replace`` using dot notation,
+in the same fashion as for ``CopyManager``.
 
 Note that on PostgreSQL 9.1 and earlier, concurrent queries on the table
 `will fail`_ once the table is dropped.
