@@ -181,13 +181,12 @@ class CopyManager(object):
             if type_info is None:
                 message = '"%s" is not a column of table "%s"."%s"'
                 raise ValueError(message % (column, self.schema, self.table))
-            coltype, typemod, notnull = type_info
-            f = type_formatters[coltype]
-            if coltype in encode.types:
+            f = type_formatters[type_info.typname]
+            if type_info.typname in encode.types:
                 f = encode(encodings[self.conn.encoding], f)
-            if coltype in maxsize.types:
-                f = maxsize(typemod, f)
-            if not notnull:
+            if type_info.typname in maxsize.types:
+                f = maxsize(type_info.atttypmod, f)
+            if not type_info.attnotnull:
                 f = null(f)
             self.formatters.append(f)
 

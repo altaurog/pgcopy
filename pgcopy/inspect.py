@@ -1,3 +1,5 @@
+from psycopg2.extras import NamedTupleCursor
+
 def get_types(conn, schema, table):
     # for arrays:
     # typname has '_' prefix
@@ -19,10 +21,6 @@ def get_types(conn, schema, table):
             WHERE n.nspname = %s and relname = %s and attnum > 0
             ORDER BY c.relname, a.attnum;
             """
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
     cursor.execute(query, (schema, table,))
-    type_dict = {}
-    for rec in cursor:
-        type_dict[rec[0]] = rec[1:]
-    return type_dict
-
+    return {r.attname: r for r in cursor}
