@@ -137,31 +137,46 @@ type_formatters = {
     'uuid': uuid_formatter,
 }
 
-def null(formatter):
-    def nullcheck(val):
-        if val is None:
-            return ('i', (-1,))
-        return formatter(val)
+def null(att, _, formatter):
+    if not att.attnotnull:
+        return lambda v: ('i', (-1,)) if v is None else formatter(v)
+    message = 'null value in column "{}" not allowed'.format(att.attname)
+    def nullcheck(v):
+        if v is None:
+            raise ValueError(message)
+        return formatter(v)
     return nullcheck
 
-def maxsize(maxsize, formatter):
+
+def maxsize(att, _, formatter):
+    if att.typname not in ('varchar', 'bpchar'):
+        return formatter
     def _maxsize(v):
         # postgres reports size + 4
-        size = min(len(v), maxsize - 4) if maxsize >= 0 else len(v)
+        size = min(len(v), att.atttypmod - 4) if att.atttypmod >= 0 else len(v)
         return formatter(v[:size])
     return _maxsize
 
-maxsize.types = ('varchar', 'bpchar')
 
-def encode(encoding, formatter):
+def encode(att, encoding, formatter):
+    if att.typname not in ('varchar', 'text', 'json'):
+        return formatter
     def _encode(v):
         try:
-            return formatter(v.encode(encoding))
+            encf = v.encode
         except AttributeError:
             return formatter(v)
+        else:
+            return formatter(encf(encoding))
     return _encode
 
-encode.types = ('varchar', 'text', 'json')
+
+def get_formatter(att):
+    try:
+        return type_formatters[att.typname]
+    except KeyError:
+        raise TypeError('type {} is not supported'.format(att.typname))
+
 
 class CopyManager(object):
     def __init__(self, conn, table, cols):
@@ -176,18 +191,15 @@ class CopyManager(object):
     def compile(self):
         self.formatters = []
         type_dict = inspect.get_types(self.conn, self.schema, self.table)
+        encoding = encodings[self.conn.encoding]
         for column in self.cols:
-            type_info = type_dict.get(column)
-            if type_info is None:
+            att = type_dict.get(column)
+            if att is None:
                 message = '"%s" is not a column of table "%s"."%s"'
                 raise ValueError(message % (column, self.schema, self.table))
-            f = type_formatters[type_info.typname]
-            if type_info.typname in encode.types:
-                f = encode(encodings[self.conn.encoding], f)
-            if type_info.typname in maxsize.types:
-                f = maxsize(type_info.atttypmod, f)
-            if not type_info.attnotnull:
-                f = null(f)
+            funcs = [encode, maxsize, null]
+            reducer = lambda f, mf: mf(att, encoding, f)
+            f = functools.reduce(reducer, funcs, get_formatter(att))
             self.formatters.append(f)
 
     def copy(self, data, fobject_factory=tempfile.TemporaryFile):
