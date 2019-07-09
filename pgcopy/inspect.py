@@ -1,10 +1,16 @@
 def get_types(conn, schema, table):
+    # for arrays:
+    # typname has '_' prefix
+    # attndims > 0
+    # typcategory is 'A'
+    # typelem is typid of individual elem (otherwise zero)
     query = """
             SELECT
                     a.attname,
                     t.typname,
                     a.atttypmod,
-                    a.attnotnull
+                    a.attnotnull,
+                    t.typelem
             FROM
                     pg_class c
                     JOIN pg_attribute a ON a.attrelid = c.oid

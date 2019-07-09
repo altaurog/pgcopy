@@ -102,6 +102,21 @@ def uuid_formatter(guid):
     return 'i2Q', (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
 
 
+def array_formatter():
+    """
+    i   total size in bytes
+    i   number of dimensions
+    i   whether there are nulls or not
+    i   element type (typelem)
+
+    for each axis:
+        i   length
+        i   lower bound (when unraveled, 1-based, seems to always be 1)
+
+    each element, unnested
+    """
+
+
 type_formatters = {
     'bool': simple_formatter('?'),
     'int2': simple_formatter('h'),
