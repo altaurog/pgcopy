@@ -15,11 +15,11 @@ def get_types(conn, schema, table):
                     a.attnotnull AS not_null,
                     t.typelem
             FROM
-                    pg_class c
-                    JOIN pg_attribute a ON a.attrelid = c.oid
-                    JOIN pg_type t ON a.atttypid = t.oid
-                    LEFT JOIN pg_type et ON t.typelem = et.oid
-                    LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+                    pg_catalog.pg_class c
+                    JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid
+                    JOIN pg_catalog.pg_type t ON a.atttypid = t.oid
+                    LEFT JOIN pg_catalog.pg_type et ON t.typelem = et.oid
+                    LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
             WHERE n.nspname = %s and relname = %s and attnum > 0
             ORDER BY c.relname, a.attnum;
             """

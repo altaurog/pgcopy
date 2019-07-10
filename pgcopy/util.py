@@ -96,7 +96,7 @@ class Replace(object):
 
     def inspect(self):
         defquery = """
-            SELECT attname, pg_get_expr(adbin, adrelid)
+            SELECT attname, pg_catalog.pg_get_expr(adbin, adrelid)
             FROM pg_catalog.pg_attribute
             JOIN pg_catalog.pg_attrdef ON attrelid = adrelid AND adnum = attnum
             WHERE adnum > 0
@@ -151,7 +151,7 @@ class Replace(object):
         self.cursor.execute(trigquery, (self.nameformat(self.table),))
         self.triggers = self.cursor.fetchall()
         viewquery = """
-            SELECT DISTINCT n.nspname, c.relname, pg_get_viewdef(r.ev_class)
+            SELECT DISTINCT n.nspname, c.relname, pg_catalog.pg_get_viewdef(r.ev_class)
             FROM pg_catalog.pg_rewrite r
             JOIN pg_catalog.pg_depend d ON d.objid = r.oid
             JOIN pg_catalog.pg_class c ON c.oid = r.ev_class

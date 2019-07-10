@@ -104,8 +104,8 @@ def schema(request, cursor):
             return 'public'
         cursor.execute("""
             SELECT nspname
-            FROM   pg_namespace
-            WHERE  oid = pg_my_temp_schema()
+            FROM   pg_catalog.pg_namespace
+            WHERE  oid = pg_catalog.pg_my_temp_schema()
         """)
         return cursor.fetchall()[0][0]
 
