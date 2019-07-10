@@ -26,7 +26,7 @@ setup(
     name = package_name,
     version = get_version(package_name),
     description = "Fast db insert with postgresql binary copy",
-    long_description = read("README.rst") + '\n\n' + read("CHANGELOG.txt"),
+    long_description = read("README.rst") + '\n\n' + read("CHANGELOG.rst"),
     author = "Aryeh Leib Taurog",
     author_email = "python@aryehleib.com",
     license = 'MIT',
