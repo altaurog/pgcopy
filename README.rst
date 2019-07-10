@@ -80,11 +80,17 @@ Currently the following PostgreSQL datatypes are supported:
 * json
 * jsonb
 * uuid
+* arrays
 
 .. note::
 
     PostgreSQL numeric does not support ``Decimal('Inf')`` or
     ``Decimal('-Inf')``.  pgcopy serializes these as ``NaN``.
+
+Arrays
+"""""""
+As of v1.4, multidimensional arrays of any of the supported datatypes are
+also supported.  Arrays can be made with ``list`` or ``tuple`` types.
 
 Encoding
 """""""""
