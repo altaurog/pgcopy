@@ -1,5 +1,16 @@
 Changelog
 -----------
+1.4.0
+"""""
+:date: unreleased
+
+* Transparent string encoding
+* Support for array types
+* Schema-aware ``Replace``
+* Search-path-aware default schema
+* Expanded test suite, using pytest
+* Travis tests on python 3.7 and PostgreSQL 10
+
 1.3.1
 """""
 :date: 14 Feb, 2018
