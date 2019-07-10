@@ -10,10 +10,7 @@ def get_types(conn, schema, table):
             SELECT
                     a.attname,
                     t.typcategory AS type_category,
-                    CASE
-                        WHEN t.typcategory = 'A' THEN et.typname
-                        ELSE t.typname
-                        END AS type_name,
+                    COALESCE(et.typname, t.typname) AS type_name,
                     a.atttypmod AS type_mod,
                     a.attnotnull AS not_null,
                     t.typelem
