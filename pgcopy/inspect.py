@@ -9,9 +9,9 @@ def get_types(conn, schema, table):
     query = """
             SELECT
                     a.attname,
-                    t.typname,
-                    a.atttypmod,
-                    a.attnotnull,
+                    t.typname AS type_name,
+                    a.atttypmod AS type_mod,
+                    a.attnotnull AS not_null,
                     t.typelem
             FROM
                     pg_class c

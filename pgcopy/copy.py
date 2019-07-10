@@ -138,7 +138,7 @@ type_formatters = {
 }
 
 def null(att, _, formatter):
-    if not att.attnotnull:
+    if not att.not_null:
         return lambda v: ('i', (-1,)) if v is None else formatter(v)
     message = 'null value in column "{}" not allowed'.format(att.attname)
     def nullcheck(v):
@@ -149,17 +149,17 @@ def null(att, _, formatter):
 
 
 def maxsize(att, _, formatter):
-    if att.typname not in ('varchar', 'bpchar'):
+    if att.type_name not in ('varchar', 'bpchar'):
         return formatter
     def _maxsize(v):
         # postgres reports size + 4
-        size = min(len(v), att.atttypmod - 4) if att.atttypmod >= 0 else len(v)
+        size = min(len(v), att.type_mod - 4) if att.type_mod >= 0 else len(v)
         return formatter(v[:size])
     return _maxsize
 
 
 def encode(att, encoding, formatter):
-    if att.typname not in ('varchar', 'text', 'json'):
+    if att.type_name not in ('varchar', 'text', 'json'):
         return formatter
     def _encode(v):
         try:
@@ -173,9 +173,9 @@ def encode(att, encoding, formatter):
 
 def get_formatter(att):
     try:
-        return type_formatters[att.typname]
+        return type_formatters[att.type_name]
     except KeyError:
-        raise TypeError('type {} is not supported'.format(att.typname))
+        raise TypeError('type {} is not supported'.format(att.type_name))
 
 
 class CopyManager(object):
