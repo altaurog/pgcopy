@@ -55,8 +55,25 @@ class TestEncoding(TypeMixin):
 class TestInteger(TypeMixin):
     datatypes = ['integer']
 
+class TestIntegerArray(TypeMixin):
+    datatypes = ['integer[]']
+    data = [
+        ([170, 171, 172],),
+        ([216, 217, 219],),
+        ([1, None, 2],),
+    ]
+
+class TestNullableIntegerArray(TypeMixin):
+    datatypes = ['integer[]']
+    null = 'NULL'
+    data = [(None,), ([512],)]
+
 class TestBool(TypeMixin):
     datatypes = ['bool']
+
+class TestBoolArray(TypeMixin):
+    datatypes = ['bool[]']
+    data = [([True, False, False, None],)]
 
 class TestSmallInt(TypeMixin):
     datatypes = ['smallint']
@@ -69,6 +86,10 @@ class TestReal(TypeMixin):
 
 class TestDouble(TypeMixin):
     datatypes = ['double precision']
+
+class TestDoubleArray(TypeMixin):
+    datatypes = ['double precision[]']
+    data = [([3.25, 1.125, None],), ([5.5, 6.5],)]
 
 class TestNull(TypeMixin):
     null = 'NULL'
@@ -96,6 +117,9 @@ class TestVarchar(TypeMixin):
     def expected(self, v):
         return (v[0][:12], v[1])
 
+class TestVarcharArray(TypeMixin):
+    datatypes = ['varchar(12)[]']
+    data = [(['one', 'two', 'three'],), (['four'],)]
 
 class TestChar(TypeMixin):
     datatypes = ['char(12)']

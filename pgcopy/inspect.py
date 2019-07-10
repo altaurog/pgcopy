@@ -9,7 +9,11 @@ def get_types(conn, schema, table):
     query = """
             SELECT
                     a.attname,
-                    t.typname AS type_name,
+                    t.typcategory AS type_category,
+                    CASE
+                        WHEN t.typcategory = 'A' THEN et.typname
+                        ELSE t.typname
+                        END AS type_name,
                     a.atttypmod AS type_mod,
                     a.attnotnull AS not_null,
                     t.typelem
@@ -17,6 +21,7 @@ def get_types(conn, schema, table):
                     pg_class c
                     JOIN pg_attribute a ON a.attrelid = c.oid
                     JOIN pg_type t ON a.atttypid = t.oid
+                    LEFT JOIN pg_type et ON t.typelem = et.oid
                     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
             WHERE n.nspname = %s and relname = %s and attnum > 0
             ORDER BY c.relname, a.attnum;

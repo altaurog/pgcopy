@@ -102,21 +102,6 @@ def uuid_formatter(guid):
     return 'i2Q', (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
 
 
-def array_formatter():
-    """
-    i   total size in bytes
-    i   number of dimensions
-    i   whether there are nulls or not
-    i   element type (typelem)
-
-    for each axis:
-        i   length
-        i   lower bound (when unraveled, 1-based, seems to always be 1)
-
-    each element, unnested
-    """
-
-
 type_formatters = {
     'bool': simple_formatter('?'),
     'int2': simple_formatter('h'),
@@ -137,15 +122,47 @@ type_formatters = {
     'uuid': uuid_formatter,
 }
 
+
+def null_formatter(formatter):
+    return lambda v: ('i', (-1,)) if v is None else formatter(v)
+
+
+def array_formatter(typelem, formatter, val):
+    """
+    i   total size in bytes
+    i   number of dimensions
+    i   whether there are nulls or not
+    i   element type (typelem)
+
+    for each axis:
+        i   length
+        i   lower bound (when unraveled, 1-based, seems to always be 1)
+
+    each element, unnested
+    """
+    fmt = ['>5i']
+    data = [1, None in val, typelem, len(val), 1]
+    for f, d in map(null_formatter(formatter), val):
+        fmt.append(f)
+        data.extend(d)
+    return str_formatter(struct.pack(''.join(fmt), *data))
+
+
 def null(att, _, formatter):
     if not att.not_null:
-        return lambda v: ('i', (-1,)) if v is None else formatter(v)
+        return null_formatter(formatter)
     message = 'null value in column "{}" not allowed'.format(att.attname)
     def nullcheck(v):
         if v is None:
             raise ValueError(message)
         return formatter(v)
     return nullcheck
+
+
+def array(att, _, formatter):
+    if att.type_category != 'A':
+        return formatter
+    return lambda v: array_formatter(att.typelem, formatter, v)
 
 
 def maxsize(att, _, formatter):
@@ -197,7 +214,7 @@ class CopyManager(object):
             if att is None:
                 message = '"%s" is not a column of table "%s"."%s"'
                 raise ValueError(message % (column, self.schema, self.table))
-            funcs = [encode, maxsize, null]
+            funcs = [encode, maxsize, array, null]
             reducer = lambda f, mf: mf(att, encoding, f)
             f = functools.reduce(reducer, funcs, get_formatter(att))
             self.formatters.append(f)
