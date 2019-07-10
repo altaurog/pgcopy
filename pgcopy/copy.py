@@ -140,9 +140,15 @@ def array_formatter(typelem, formatter, val):
 
     each element, unnested
     """
-    fmt = ['>5i']
-    data = [1, None in val, typelem, len(val), 1]
-    for f, d in map(null_formatter(formatter), val):
+    info = util.array_info(val)
+    ndim, lengths = info[0], info[1:]
+    if ndim == 0:
+        raise ValueError('{} is not an array type'.format(val))
+    elems = list(util.array_iter(val))
+    fmt = ['>3i{}i'.format(2 * ndim)]
+    data = [ndim, None in elems, typelem] + [1] * ndim * 2
+    data[3::2] = lengths
+    for f, d in map(null_formatter(formatter), elems):
         fmt.append(f)
         data.extend(d)
     return str_formatter(struct.pack(''.join(fmt), *data))

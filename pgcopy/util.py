@@ -4,6 +4,29 @@ import string
 from datetime import datetime
 from pytz import UTC
 
+def array_info(arr):
+    """
+    returns ndims, *lengths
+    """
+    if not isinstance(arr, (list, tuple, set)):
+        return 0,
+    subs = set([array_info(elem) for elem in arr])
+    if len(subs) > 1:
+        raise ValueError('subarray dimensions must match')
+    if len(subs) == 0:
+        return 1, 0
+    s = subs.pop()
+    dim, lengths = s[0], s[1:]
+    return (dim + 1, len(arr)) + lengths
+
+def array_iter(arr):
+    for i in arr:
+        if isinstance(i, (list, tuple, set)):
+            for x in array_iter(i):
+                yield x
+        else:
+            yield i
+
 def get_schema(conn, table):
     cur = conn.cursor()
     query = """

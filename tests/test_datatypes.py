@@ -63,6 +63,22 @@ class TestIntegerArray(TypeMixin):
         ([1, None, 2],),
     ]
 
+class TestIntegerMultiDimArray(TypeMixin):
+    "also check that tuples are accepted"
+    datatypes = ['integer[]']
+    data = [
+        (([1, 2, 4], [170, 171, 172]),),
+        ([(216, 217), (218, 219), (102, 104)],),
+    ]
+
+    def tolist(self, v):
+        if isinstance(v, (list, tuple)):
+            return [self.tolist(i) for i in v]
+        return v
+
+    def expected(self, rec):
+        return [self.tolist(v) for v in rec]
+
 class TestNullableIntegerArray(TypeMixin):
     datatypes = ['integer[]']
     null = 'NULL'
