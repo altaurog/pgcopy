@@ -44,10 +44,12 @@ matrix:
               postgresql: "9.6"
         - python: 3.7
           dist: xenial
-          env: TOXENV=py37
+          env: TOXENV=py37,coverage
           addons:
               postgresql: "10"
 install:
-    - pip install tox
+    - pip install tox coveralls
 script:
     - tox
+after_success:
+    - coveralls
