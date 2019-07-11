@@ -2,7 +2,27 @@ import contextlib
 import psycopg2
 import pytest
 from pgcopy import Replace
+from pgcopy import util
 from . import db
+
+
+class TestRenameReplace(db.TemporaryTable):
+    datatypes = ['integer']
+
+    def test_rename_replace(self, conn, cursor, schema):
+        viewsql = "CREATE VIEW v AS SELECT a + 1 FROM {}"
+        cursor.execute(viewsql.format(self.table))
+        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        cursor.executemany(sql.format(self.table), [(1,), (2,)])
+        xform = lambda s: s + '_old'
+        with util.RenameReplace(conn, self.table, xform) as temp:
+            cursor.executemany(sql.format(temp), [(36,), (72,)])
+        cursor.execute('SELECT * FROM {}'.format(self.table))
+        assert list(cursor) == [(36,), (72,)]
+        cursor.execute('SELECT * FROM v')
+        assert list(cursor) == [(37,), (73,)]
+        cursor.execute('SELECT * FROM {}'.format(self.table + '_old'))
+        assert list(cursor) == [(1,), (2,)]
 
 
 class TestReplaceFallbackSchema(db.TemporaryTable):
