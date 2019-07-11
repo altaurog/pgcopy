@@ -2,7 +2,7 @@ Changelog
 -----------
 1.4.0
 """""
-unreleased
+11 Jul, 2019
 
 * Transparent string encoding
 * Support for array types
