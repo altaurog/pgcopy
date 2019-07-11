@@ -23,7 +23,7 @@ author = 'Aryeh Leib Taurog'
 
 # The full version, including alpha/beta/rc tags
 release = '1.4.0'
-
+master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------
 
