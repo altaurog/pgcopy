@@ -202,6 +202,22 @@ def get_formatter(att):
 
 
 class CopyManager(object):
+    """
+    Facility for bulk-loading data using binary copy.
+
+    Inspects the database on instantiation for the column types.
+
+    :param conn: a database connection
+    :type conn: psycopg2 connection
+
+    :param table: the table name.  Schema may be specified using dot notation: ``schema.table``.
+    :type table: str
+
+    :param cols: columns in the table into which to copy data
+    :type cols: list of str
+
+    :raises ValueError: if the table or columns do not exist.
+    """
     def __init__(self, conn, table, cols):
         self.conn = conn
         if '.' in table:
@@ -226,6 +242,32 @@ class CopyManager(object):
             self.formatters.append(f)
 
     def copy(self, data, fobject_factory=tempfile.TemporaryFile):
+        """
+        Copy data into the database using a temporary file.
+
+        :param data: the data to be inserted
+        :type data: iterable of iterables
+
+        :param fobject_factory: a tempfile factory
+        :type fobject_factory: function
+
+        Data is serialized first in its entirety and then sent to the database.
+        By default, a temporary file on disk is used.  If you have enough memory,
+        you can get a slight performance benefit with in-memory storage::
+
+            from io import BytesIO
+            mgr.copy(records, BytesIO)
+
+        For very large datasets, serialization can be done directly to the
+        database connection using :meth:`threading_copy`.
+
+        In most circumstances, however, data transfer over the network and
+        db processing take significantly more time than writing and reading
+        a temporary file on a local disk.
+
+        ``ValueError`` is raised if a null value is provided for a column
+        with non-null constraint.
+        """
         datastream = fobject_factory()
         self.writestream(data, datastream)
         datastream.seek(0)
@@ -233,6 +275,12 @@ class CopyManager(object):
         datastream.close()
 
     def threading_copy(self, data):
+        """
+        Copy data, serializing directly to the database.
+
+        :param data: the data to be inserted
+        :type data: iterable of iterables
+        """
         r_fd, w_fd = os.pipe()
         rstream = os.fdopen(r_fd, 'rb')
         wstream = os.fdopen(w_fd, 'wb')
