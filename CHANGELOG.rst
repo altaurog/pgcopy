@@ -2,24 +2,25 @@ Changelog
 -----------
 1.4.0
 """""
-:date: unreleased
+unreleased
 
 * Transparent string encoding
 * Support for array types
-* Schema-aware ``Replace``
+* Schema-aware :class:`pgcopy.Replace`
 * Search-path-aware default schema
 * Expanded test suite, using pytest
+* Expanded documentation
 * Travis tests on python 3.7 and PostgreSQL 10
 
 1.3.1
 """""
-:date: 14 Feb, 2018
+14 Feb, 2018
 
 * Mention `commit` in the README
 
 1.3.0
 """""
-:date: 22 Aug, 2017
+22 Aug, 2017
 
 * Support unlimited varchar fields (thanks John A. Bachman)
 * Updated documentation regarding string encoding in Python 3 (thanks John
@@ -29,22 +30,22 @@ Changelog
 
 1.2.0
 """""
-:date: 25 Mar, 2017
+25 Mar, 2017
 
 * Support db schema (thanks Marcin Gozdalik)
 
 1.1.0
 """""
-:date: 26 Jan, 2017
+26 Jan, 2017
 
-* Support `uuid`, `json`, and `jsonb` types
+* Support ``uuid``, ``json``, and ``jsonb`` types
   (thanks Igor Mastak)
 * Integrate Travis CI
 * Add docker test strategy
 
 1.0.0
 """""
-:date: 19 Jan, 2017
+19 Jan, 2017
 
 * Run tests with tox
 * Support Python 3
@@ -52,44 +53,44 @@ Changelog
 
 0.7
 """
-:date: 19 Jan, 2017
+19 Jan, 2017
 
 * Add support for serializing Python ``decimal.Decimal`` to PostgreSQL ``numeric``.
 
 0.6
 """
-:date: 21 Oct, 2014
+21 Oct, 2014
 
-* ``RenameReplace`` variant
+* :class:`pgcopy.util.RenameReplace` variant
 
 0.5
 """
-:date: 14 Jul, 2014
+14 Jul, 2014
 
 * Support default values and sequences
 
 0.4
 """
-:date: 14 Jul, 2014
+14 Jul, 2014
 
-* Fix ``Replace`` utility class bugs
-* Add view support to ``Replace``
+* Fix :class:`pgcopy.Replace` utility class bugs
+* Add view support to :class:`pgcopy.Replace`
 
 0.3
 """
-:date: 8 Jul, 2014
+8 Jul, 2014
 
 *  Move Cython optimization to separate project
-*  Add ``Replace`` utility class
+*  Add :class:`pgcopy.Replace` utility class
 
 0.2
 """
-:date: 7 Jul, 2014
+7 Jul, 2014
 
 *  Cython optimization
 
 0.1
 """
-:date: 29 Jun, 2014
+29 Jun, 2014
 
 *  Initial version

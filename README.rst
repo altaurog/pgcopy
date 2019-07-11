@@ -1,35 +1,39 @@
+.. home-start
+
 pgcopy
-=================
+=======
 
 .. image:: https://travis-ci.org/altaurog/pgcopy.svg?branch=master
     :target: https://travis-ci.org/altaurog/pgcopy
 
+.. image:: https://img.shields.io/pypi/l/pgcopy.svg
+    :target: https://pypi.org/project/pgcopy/
+
+.. image:: https://img.shields.io/pypi/wheel/pgcopy.svg
+    :target: https://pypi.org/project/pgcopy/
+
+.. image:: https://img.shields.io/pypi/pyversions/pgcopy.svg
+    :target: https://pypi.org/project/pgcopy/
+
 pgcopy is a small system for very fast bulk insertion of data into a
 PostgreSQL database table using `binary copy`_.
 
-Installation
--------------
+.. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 
-To install::
-
-    $ pip install pgcopy
-
-pgcopy requires pytz_ and the psycopg2_ db adapter.
-pytest_ is required to run the tests.
-
-pgcopy is currently tested with python versions 2.7, 3.4 -- 3.7 and
-PostgreSQL versions 9.1 - 11
-
-Use
+Features
 ---------
+* Support for many data types
+* Support for multi-dimensional array types
+* Support for schema and schema search path
+* Transparent string encoding
+* Utility for replacing entire table
 
-pgcopy provides facility for copying data from an iterable of tuple-like
-objects using a ``CopyManager``, which must be instantiated with a psycopg2
-db connection, the table name, and an iterable containing the names of the
-columns to be inserted in the order in which they will be provided.
-pgcopy inspects the database to determine the datatypes of the columns.
+Quickstart
+-----------
 
-For example::
+.. quickstart-start
+
+::
 
     from datetime import datetime
     from pgcopy import CopyManager
@@ -48,20 +52,12 @@ For example::
     # don't forget to commit!
     conn.commit()
 
-By default, a temporary file on disk is used.  If there's enough memory,
-you can get a slight performance benefit with in-memory storage::
-
-    from io import BytesIO
-    mgr.copy(records, BytesIO)
-
-A db schema can be specified in the table name using dot notation::
-
-    mgr = CopyManager(conn, 'myschema.measurements', cols)
+.. home-end
 
 Supported datatypes
 -------------------
 
-Currently the following PostgreSQL datatypes are supported:
+pgcopy supports the following PostgreSQL scalar types:
 
 * bool
 * smallint
@@ -76,98 +72,11 @@ Currently the following PostgreSQL datatypes are supported:
 * date
 * timestamp
 * timestamp with time zone
-* numeric (data must be ``decimal.Decimal``)
+* numeric
 * json
 * jsonb
 * uuid
 * arrays
-
-.. note::
-
-    PostgreSQL numeric does not support ``Decimal('Inf')`` or
-    ``Decimal('-Inf')``.  pgcopy serializes these as ``NaN``.
-
-Arrays
-"""""""
-As of v1.4, multidimensional arrays of any of the supported datatypes are
-also supported.  Arrays can be made with ``list`` or ``tuple`` types.
-
-Encoding
-"""""""""
-As of v1.4, encoding is handled automatically for ``char``,
-``varchar``, ``text``, and ``json`` types.  Python ``bytes`` may also be
-used, provided the encoding matches that of the db connection.
-
-No encoding is performed for data to be inserted into ``bytea`` or
-``jsonb`` types.
-
-String Length
-""""""""""""""
-Strings will be silently truncated to fit the database columns.
-
-Null
-""""
-Values intended to be ``NULL`` in the database should be encoded as ``None``
-rather than as empty strings.
-
-Testing
---------
-
-For a fast test run using current environment, use pytest_::
-
-    $ pytest tests
-
-For more thorough testing, Tox_ configuration will run tests on python
-versions 2.7 and 3.4 -- 3.7::
-
-    $ tox
-
-Additionally, test can be run with no local requirements other than the
-ubiquitous docker::
-
-    $ docker-compose up pgcopy
-
-
-Benchmarks
------------
-
-Below are simple benchmarks for 100000 records.
-This gives a general idea of the kind of speedup 
-available with pgcopy::
-
-    $ python -m tests.benchmark
-              ExecuteManyBenchmark:   7.75s
-                   PGCopyBenchmark:   0.54s
-
-Replacing a Table
-------------------
-
-When possible, faster insertion may be realized by inserting into an empty
-table with no indices or constraints.  In a case where the entire contents
-of the table can be reinserted, the ``Replace`` context manager automates
-the process.  On entry, it creates a new table like the original, with a
-temporary name.  Default column values are included.  It provides the
-temporary name for populating the table within the context.  On exit, it
-recreates the constraints, indices, triggers, and views on the new table,
-then replaces the old table with the new.  It can be used so::
-
-    from pgcopy import CopyManager, Replace
-    with Replace(conn, 'mytable') as temp_name:
-        mgr = CopyManager(conn, temp_name, cols)
-        mgr.copy(records)
-
-``Replace`` renames new db objects like the old, where possible.
-Names of foreign key and check constraints will be mangled.
-As of v0.6 there is also ``pgcopy.util.RenameReplace``, which instead of
-dropping the original objects renames them using a transformation function.
-
-As of v1.4, a db schema can be specified to ``Replace`` using dot notation,
-in the same fashion as for ``CopyManager``.
-
-Note that on PostgreSQL 9.1 and earlier, concurrent queries on the table
-`will fail`_ once the table is dropped.
-
-.. _will fail: https://gist.github.com/altaurog/ab0019837719d2a93e6b
 
 See Also
 --------

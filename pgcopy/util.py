@@ -56,16 +56,35 @@ idre = lambda name: re.compile(r'\b%s\b' % re.escape(name))
 
 class Replace(object):
     """
-    Utility for fast updates on table involving most rows in the table.
-    Instead of executemany("UPDATE ..."), create and populate
+    Context manager for fast updates on table involving most rows in the table.
+    Instead of `executemany("UPDATE ...")`, create and populate
     a new table (which can be done using COPY), then rename.
+    This is possible only if no other tables in the db depend on the table.
 
-    Can do this only if no other tables in the db depend on the table.
+    :param connection: database connection
+    :type connection: psycopg2 connection
 
-    NOTE: With PostgreSQL < 9.3 after the table is dropped attempts to
-    query it will fail.
+    :param table: the table name.  Schema may be specified using dot notation: ``schema.table``.
+    :type table: str
 
-    See http://dba.stackexchange.com/a/41111/9941
+    On entry, it creates a new table like the original, with a
+    temporary name.  Default column values are included.
+
+    On exit, it recreates the constraints, indices, triggers, and views on
+    the new table, then replaces the old table with the new::
+
+        from pgcopy import CopyManager, Replace
+        with Replace(conn, 'mytable') as temp_name:
+            mgr = CopyManager(conn, temp_name, cols)
+            mgr.copy(records)
+
+    New db objects are named like the old, where possible.
+    Names of foreign key and check constraints will be mangled.
+
+    .. note:: on PostgreSQL 9.1 and earlier, concurrent queries on the table
+        `will fail`_ once the table is dropped.
+
+    .. _will fail: https://gist.github.com/altaurog/ab0019837719d2a93e6b
     """
     def __init__(self, connection, table):
         self.cursor = connection.cursor()
@@ -275,7 +294,27 @@ class Replace(object):
 
 
 class RenameReplace(Replace):
-    "Subclass for renaming old table and recreating empty one like it"
+    """
+    Subclass of :class:`Replace` whic renaming original table instead of dropping it.
+
+    :param connection: database connection
+    :type connection: psycopg2 connection
+
+    :param table: the table name.  Schema may be specified using dot notation: ``schema.table``.
+    :type table: str
+
+    :param xform: a function translating original table name to new name, used for table and pk constraint names
+    :type xform: function
+
+    ::
+
+        from pgcopy import CopyManager
+        from pgcopy.util import RenameReplace
+        xform = lambda s: s + '_old'
+        with RenameReplace(conn, 'mytable', xform) as temp_name:
+            mgr = CopyManager(conn, temp_name, cols)
+            mgr.copy(records)
+    """
     def __init__(self, connection, table, xform):
         """
         xform must be a function which translates old

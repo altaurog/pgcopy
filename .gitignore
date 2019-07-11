@@ -8,5 +8,6 @@
 *.so
 *.dat
 /build/
+/_build/
 /dist/
 .idea/
