@@ -11,7 +11,7 @@ def test_array_info(arr, info):
 
 
 def test_bad_array():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='subarray dimensions must match'):
         util.array_info([1, [2]])
 
 
