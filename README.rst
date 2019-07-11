@@ -6,6 +6,9 @@ pgcopy
 .. image:: https://travis-ci.org/altaurog/pgcopy.svg?branch=master
     :target: https://travis-ci.org/altaurog/pgcopy
 
+.. image:: https://coveralls.io/repos/github/altaurog/pgcopy/badge.svg?branch=master
+    :target: https://coveralls.io/github/altaurog/pgcopy?branch=master
+
 .. image:: https://img.shields.io/pypi/l/pgcopy.svg
     :target: https://pypi.org/project/pgcopy/
 
@@ -15,10 +18,11 @@ pgcopy
 .. image:: https://img.shields.io/pypi/pyversions/pgcopy.svg
     :target: https://pypi.org/project/pgcopy/
 
-pgcopy is a small system for very fast bulk insertion of data into a
-PostgreSQL database table using `binary copy`_.
+Use pgcopy_ for fast data loading into
+PostgreSQL with `binary copy`_.
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
+.. _pgcopy: https://pgcopy.readthedocs.io/en/latest/
 
 Features
 ---------
@@ -77,6 +81,13 @@ pgcopy supports the following PostgreSQL scalar types:
 * jsonb
 * uuid
 * arrays
+
+Documentation
+--------------
+
+`Read the docs.`_
+
+.. _Read the docs.: pgcopy_
 
 See Also
 --------

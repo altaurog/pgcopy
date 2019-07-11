@@ -31,7 +31,7 @@ setup(
     author = "Aryeh Leib Taurog",
     author_email = "python@aryehleib.com",
     license = 'MIT',
-    url = "https://github.com/altaurog/pgcopy",
+    url = "https://pgcopy.readthedocs.io/en/latest/",
     packages = [package_name],
     install_requires = ["psycopg2", "pytz"],
     classifiers = [
