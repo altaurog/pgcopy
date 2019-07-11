@@ -13,3 +13,12 @@ class TestErrors(db.TemporaryTable):
         bincopy = CopyManager(conn, schema_table, self.cols)
         with pytest.raises(ValueError):
             bincopy.copy([[None]])
+
+
+class TestDroppedCol(db.TemporaryTable):
+    datatypes = ['integer', 'integer']
+    def test_dropped_col(self, conn, cursor, schema_table):
+        sql = 'ALTER TABLE {} DROP COLUMN {}'
+        cursor.execute(sql.format(schema_table, self.cols[1]))
+        with pytest.raises(ValueError):
+            CopyManager(conn, schema_table, self.cols)
