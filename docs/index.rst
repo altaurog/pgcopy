@@ -13,3 +13,4 @@
    benchmarks
    testing
    changelog
+   authors
