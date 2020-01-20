@@ -8,3 +8,4 @@ with contributions from
 * Marcin Gozdalik `@gozdal <https://github.com/gozdal>`_
 * John A. Bachman `@johnbachman <https://github.com/johnbachman>`_
 * Akshaye Shenoi `@akshayeshenoi <https://github.com/akshayeshenoi>`_
+* Nathan Glover `@nathanglover <https://github.com/nathanglover>`_

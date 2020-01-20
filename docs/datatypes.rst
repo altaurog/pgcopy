@@ -22,6 +22,7 @@ varchar                    str, bytes        Encoding_, Truncation_
 text                       str, bytes        Encoding_, Truncation_
 bytea                      bytes             Truncation_
 date                       datetime.date
+time                       datetime.time
 timestamp                  datetime.datetime
 timestamp with time zone   datetime.datetime
 numeric                    decimal.Decimal   Numeric_
