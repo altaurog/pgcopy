@@ -1,7 +1,7 @@
 import re
 import random
 import string
-from datetime import datetime
+from datetime import datetime, time
 from pytz import UTC
 
 def array_info(arr):
@@ -45,6 +45,12 @@ def to_utc(dt):
         return UTC.localize(dt)
     else:
         return dt.astimezone(UTC)
+
+def to_utc_time(t):
+    if not isinstance(t, time):
+        t = time(t.hour, t.minute, t.second, t.microsecond)
+    
+    return UTC.localize(t)
 
 source = string.ascii_lowercase + string.digits
 def uid():
