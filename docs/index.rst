@@ -14,3 +14,4 @@
    testing
    changelog
    authors
+   license
