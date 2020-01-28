@@ -22,8 +22,13 @@ options are:
 
 Compatibility
 """""""""""""
-pgcopy is tested with Python versions 2.7, 3.4 -- 3.7 and
-PostgreSQL versions 9.1 -- 11
+pgcopy is tested with Python versions 2.7, 3.5 -- 3.8 and
+PostgreSQL versions 9.4 -- 11
+
+.. note::
+
+    Python 2.7 is no longer supported!
+    Please upgrade to Python 3.
 
 .. _psycopg2: https://pypi.org/project/psycopg2/
 .. _pytz: https://pypi.org/project/pytz/
