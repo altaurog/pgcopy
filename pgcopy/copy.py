@@ -5,7 +5,7 @@ import struct
 import tempfile
 import threading
 
-from datetime import date
+from datetime import date, datetime
 
 try:
     from itertools import izip as zip
@@ -43,6 +43,12 @@ def timestamp(dt):
     # see http://stackoverflow.com/a/14369386/519015
     val = ((unix_timestamp - psql_epoch) * 1000000) + dt.microsecond
     return ('iq', (8, val))
+
+def time_formatter(t):
+    'get microseconds since 2000-01-01 00:00'
+    t = util.to_utc_time(t)
+    dt = datetime.combine(psql_epoch_date, t)
+    return timestamp(dt)
 
 def datestamp(d):
     'days since 2000-01-01'
@@ -116,6 +122,7 @@ type_formatters = {
     'json': str_formatter,
     'jsonb': jsonb_formatter,
     'date': datestamp,
+    'time': time_formatter,
     'timestamp': timestamp,
     'timestamptz': timestamp,
     'numeric': numeric,

@@ -199,6 +199,9 @@ class TestBytea(TypeMixin):
         assert isinstance(v, memoryview)
         return bytes(v)
 
+class TestTime(TypeMixin):
+    datatypes = ['time']
+
 class TestTimestamp(TypeMixin):
     datatypes = ['timestamp']
 
