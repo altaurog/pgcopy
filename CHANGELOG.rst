@@ -1,5 +1,11 @@
 Changelog
 -----------
+1.4.1
+"""""
+28 Jan, 2020
+
+* Support for time datatype (thanks Nathan Glover)
+
 1.4.0
 """""
 11 Jul, 2019
