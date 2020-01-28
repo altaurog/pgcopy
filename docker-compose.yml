@@ -15,7 +15,7 @@ services:
       - pgsql
 
   pgsql:
-    image: postgres:9.5
+    image: postgres:10
     environment:
       - POSTGRES_DB=pgcopy_test
       - POSTGRES_USER=postgres

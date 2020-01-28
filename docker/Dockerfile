@@ -1,4 +1,4 @@
-FROM ubuntu:trusty
+FROM python:3.8-slim-buster
 
 ARG DEBIAN_FRONTEND=noninteractive
 
