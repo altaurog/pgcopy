@@ -4,7 +4,7 @@ Changelog
 """""
 28 Jan, 2020
 
-* Support for time datatype (thanks Nathan Glover)
+* Support for ``time`` datatype (thanks Nathan Glover)
 
 1.4.0
 """""
@@ -22,7 +22,7 @@ Changelog
 """""
 14 Feb, 2018
 
-* Mention `commit` in the README
+* Mention ``commit`` in the README
 
 1.3.0
 """""
