@@ -200,6 +200,16 @@ def encode(att, encoding, formatter):
             return formatter(encf(encoding))
     return _encode
 
+def diagnostic(att, encoding, formatter):
+    template = 'error formatting value {} for column {}'
+    def f(v):
+        try:
+            return formatter(v)
+        except Exception as exc:
+            m = template.format(v, att.attname)
+            raise ValueError(m) from exc
+    return f
+
 
 def get_formatter(att):
     try:
@@ -243,7 +253,7 @@ class CopyManager(object):
             if att is None:
                 message = '"%s" is not a column of table "%s"."%s"'
                 raise ValueError(message % (column, self.schema, self.table))
-            funcs = [encode, maxsize, array, null]
+            funcs = [encode, maxsize, array, diagnostic, null]
             reducer = lambda f, mf: mf(att, encoding, f)
             f = functools.reduce(reducer, funcs, get_formatter(att))
             self.formatters.append(f)
