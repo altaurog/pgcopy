@@ -2,6 +2,7 @@ import calendar
 import functools
 import os
 import struct
+import sys
 import tempfile
 import threading
 
@@ -13,7 +14,7 @@ except ImportError:
     pass
 
 from psycopg2.extensions import encodings
-from . import inspect, util
+from . import errors, inspect, util
 
 __all__ = ['CopyManager']
 
@@ -206,8 +207,8 @@ def diagnostic(att, encoding, formatter):
         try:
             return formatter(v)
         except Exception as exc:
-            m = template.format(v, att.attname)
-            raise ValueError(m) from exc
+            message = template.format(v, att.attname)
+            errors.raise_from(ValueError, message, exc)
     return f
 
 
