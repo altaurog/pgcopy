@@ -1,5 +1,12 @@
 Changelog
 -----------
+1.4.2
+"""""
+13 Oct, 2020
+
+* Exceptions raised in value formatter functions augmented
+  with column name and value.
+
 1.4.1
 """""
 28 Jan, 2020
