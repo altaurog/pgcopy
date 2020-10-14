@@ -38,8 +38,6 @@ matrix:
           addons:
               postgresql: "10"
 install:
-    - pip install tox coveralls
+    - pip install tox
 script:
     - tox
-after_success:
-    - coveralls
