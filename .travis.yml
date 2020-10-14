@@ -11,7 +11,7 @@ matrix:
           dist: bionic
           env: TOXENV=py27
           addons:
-              postgresql: "10"
+              postgresql: "11"
         - python: 3.5
           dist: precise
           env: TOXENV=py35
@@ -23,20 +23,24 @@ matrix:
           addons:
               postgresql: "9.5"
         - python: 3.7
-          dist: xenial
+          dist: bionic
           env: TOXENV=py37
           addons:
-              postgresql: "9.6"
+              postgresql: "10"
+        - python: 3.7
+          dist: bionic
+          env: TOXENV=py37,coverage
+          addons:
+              postgresql: "11"
+        - python: 3.7
+          dist: focal
+          env: TOXENV=py37
+          services: postgresql # 12.4
         - python: 3.8
           dist: bionic
           env: TOXENV=py38
           addons:
-              postgresql: "10"
-        - python: 3.7
-          dist: xenial
-          env: TOXENV=py37,coverage
-          addons:
-              postgresql: "10"
+              postgresql: "11"
 install:
     - pip install tox
 script:

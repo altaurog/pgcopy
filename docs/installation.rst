@@ -23,7 +23,7 @@ options are:
 Compatibility
 """""""""""""
 pgcopy is tested with Python versions 2.7, 3.5 -- 3.8 and
-PostgreSQL versions 9.4 -- 11
+PostgreSQL versions 9.4 -- 12
 
 .. note::
 
