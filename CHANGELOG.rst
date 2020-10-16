@@ -1,5 +1,11 @@
 Changelog
 -----------
+1.4.3
+"""""
+16 Oct, 2020
+
+* Fix error in packaging.
+
 1.4.2
 """""
 13 Oct, 2020
