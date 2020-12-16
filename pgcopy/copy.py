@@ -1,10 +1,10 @@
 import calendar
+import concurrent.futures
 import functools
 import os
 import struct
 import sys
 import tempfile
-import threading
 
 from datetime import date, datetime
 
@@ -302,11 +302,11 @@ class CopyManager(object):
         r_fd, w_fd = os.pipe()
         rstream = os.fdopen(r_fd, 'rb')
         wstream = os.fdopen(w_fd, 'wb')
-        copy_thread = threading.Thread(target=self.copystream, args=(rstream,))
-        copy_thread.start()
-        self.writestream(data, wstream)
-        wstream.close()
-        copy_thread.join()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(self.copystream, rstream)
+            self.writestream(data, wstream)
+            wstream.close()
+            future.result()
 
     def writestream(self, data, datastream):
         datastream.write(BINCOPY_HEADER)
