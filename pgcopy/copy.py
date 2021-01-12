@@ -190,7 +190,9 @@ def maxsize(att, _, formatter):
 
 
 def encode(att, encoding, formatter):
-    if att.type_name not in ('varchar', 'text', 'json'):
+    is_text_type = att.type_name in ('varchar', 'text', 'json')
+    is_enum_type = att.type_category == 'E'
+    if not (is_text_type or is_enum_type):
         return formatter
     def _encode(v):
         try:
@@ -213,6 +215,8 @@ def diagnostic(att, encoding, formatter):
 
 
 def get_formatter(att):
+    if att.type_category == 'E':
+        return str_formatter
     try:
         return type_formatters[att.type_name]
     except KeyError:

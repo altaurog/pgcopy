@@ -21,6 +21,7 @@ char                       str, bytes        Encoding_, Truncation_
 varchar                    str, bytes        Encoding_, Truncation_
 text                       str, bytes        Encoding_, Truncation_
 bytea                      bytes             Truncation_
+enum types                 str, bytes        Encoding_
 date                       datetime.date
 time                       datetime.time
 timestamp                  datetime.datetime

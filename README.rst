@@ -73,6 +73,7 @@ pgcopy supports the following PostgreSQL scalar types:
 * varchar
 * text
 * bytea
+* enum types
 * date
 * time
 * timestamp

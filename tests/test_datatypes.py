@@ -23,6 +23,7 @@ def test_db_encoding(conn):
 class TypeMixin(db.TemporaryTable):
     null = 'NOT NULL'
     record_count = 3
+    extra_sql = None
     def test_type(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data)
@@ -39,6 +40,10 @@ class TypeMixin(db.TemporaryTable):
             assert a == self.cast(b)
 
     def cast(self, v): return v
+
+    def create_sql(self, *args, **kwargs):
+        table_sql = super(TypeMixin, self).create_sql(*args, **kwargs)
+        return ";".join(filter(None, [self.extra_sql, table_sql]))
 
     expected = cast
 
@@ -243,3 +248,10 @@ class TestUUID(TypeMixin):
 
     def cast(self, v):
         return uuid.UUID(v)
+
+
+class TestEnum(TypeMixin):
+    tempschema = False
+    extra_sql = "CREATE TYPE test_enum AS ENUM ('one', 'two', 'three')"
+    datatypes = ['test_enum']
+    data = [('one',), ('two',), ('three',)]
