@@ -36,7 +36,11 @@ matrix:
           dist: focal
           env: TOXENV=py37
           addons:
-              postgresql: "13"
+              postgresql: "12"
+              apt:
+                  packages:
+                      - postgresql-12
+                      - postgresql-client-12
         - python: 3.8
           dist: bionic
           env: TOXENV=py38
