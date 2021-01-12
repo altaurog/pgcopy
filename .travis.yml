@@ -35,7 +35,8 @@ matrix:
         - python: 3.7
           dist: focal
           env: TOXENV=py37
-          services: postgresql # 12.4
+          addons:
+              postgresql: "12"
         - python: 3.8
           dist: bionic
           env: TOXENV=py38
