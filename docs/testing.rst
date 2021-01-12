@@ -6,7 +6,7 @@ For a fast test run using current environment, use pytest_::
     $ pytest tests
 
 For more thorough testing, Tox_ configuration will run tests on python
-versions 2.7 and 3.4 -- 3.7::
+versions 2.7 and 3.6 -- 3.8::
 
     $ tox
 

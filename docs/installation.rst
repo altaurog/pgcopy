@@ -22,8 +22,8 @@ options are:
 
 Compatibility
 """""""""""""
-pgcopy is tested with Python versions 2.7, 3.5 -- 3.8 and
-PostgreSQL versions 9.4 -- 12
+pgcopy is tested with Python versions 2.7, 3.6 -- 3.8 and
+PostgreSQL versions 9.4 -- 13
 
 .. note::
 
