@@ -1,5 +1,11 @@
 Changelog
 -----------
+1.5.0
+"""""
+12 Jan, 2021
+
+* Add support for enum types
+
 1.4.3
 """""
 16 Oct, 2020

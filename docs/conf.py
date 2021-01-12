@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'pgcopy'
-copyright = '2020, Aryeh Leib Taurog'
+copyright = '2021, Aryeh Leib Taurog'
 author = 'Aryeh Leib Taurog'
 
 # The full version, including alpha/beta/rc tags
-release = '1.4.3'
+release = '1.5.0'
 master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------
