@@ -1,7 +1,7 @@
 import re
 import random
 import string
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from pytz import UTC
 
 def array_info(arr):
@@ -48,8 +48,14 @@ def to_utc(dt):
 
 def to_utc_time(t):
     if not isinstance(t, time):
-        t = time(t.hour, t.minute, t.second, t.microsecond)
-    
+        if not isinstance(t,timedelta):
+            t = time(t.hours, t.minutes, t.seconds, t.microseconds)
+        else:
+            days, seconds = t.days, t.seconds
+            hours = days * 24 + seconds // 3600
+            minutes = (seconds % 3600) // 60
+            seconds = (seconds % 60)
+            t = time(hours, minutes, seconds, 0)
     return UTC.localize(t)
 
 source = string.ascii_lowercase + string.digits
