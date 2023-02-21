@@ -3,6 +3,7 @@ import random
 import string
 from datetime import datetime, time
 from pytz import UTC
+import psycopg2.sql
 
 def array_info(arr):
     """
@@ -35,7 +36,7 @@ def get_schema(conn, table):
         JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
         WHERE c.oid = %s::regclass
         """
-    cur.execute(query, (table,))
+    cur.execute(query, (psycopg2.sql.Identifier(table).as_string(cur),))
     return cur.fetchone()[0]
 
 def to_utc(dt):
