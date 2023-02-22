@@ -12,7 +12,6 @@ if sys.version_info < (3,):
     memoryview = buffer
 
 import psycopg2.extensions
-
 from pgcopy import CopyManager, util
 
 from . import db
@@ -35,7 +34,8 @@ class TypeMixin(db.TemporaryTable):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data)
         select_list = ",".join(self.cols)
-        cursor.execute("SELECT %s from %s" % (select_list, schema_table))
+        schema, table = schema_table.split(".")
+        cursor.execute('SELECT %s from "%s"."%s"' % (select_list, schema, table))
         self.checkResults(cursor, data)
 
     def checkResults(self, cursor, data):

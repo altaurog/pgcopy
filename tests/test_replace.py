@@ -2,7 +2,6 @@ import contextlib
 
 import psycopg2
 import pytest
-
 from pgcopy import Replace, util
 
 from . import db
@@ -10,6 +9,7 @@ from . import db
 
 class TestRenameReplace(db.TemporaryTable):
     datatypes = ["integer"]
+    mixed_case = False
 
     def test_rename_replace(self, conn, cursor, schema):
         viewsql = "CREATE VIEW v AS SELECT a + 1 FROM {}"
@@ -29,6 +29,7 @@ class TestRenameReplace(db.TemporaryTable):
 
 class TestReplaceFallbackSchema(db.TemporaryTable):
     datatypes = ["integer"]
+    mixed_case = False
 
     def test_fallback_schema_honors_search_path(
         self, conn, cursor, schema, schema_table
@@ -47,6 +48,7 @@ class TestReplaceDefault(db.TemporaryTable):
     Defaults are set on temp table immediately.
     """
 
+    mixed_case = False
     null = ""
     datatypes = [
         "integer",
@@ -74,6 +76,7 @@ def replace_raises(conn, table, exc=psycopg2.IntegrityError):
 
 
 class TestReplaceNotNull(db.TemporaryTable):
+    mixed_case = False
     null = ""
     datatypes = [
         "integer",
@@ -92,6 +95,7 @@ class TestReplaceNotNull(db.TemporaryTable):
 
 
 class TestReplaceConstraint(db.TemporaryTable):
+    mixed_case = False
     null = ""
     datatypes = [
         "integer CHECK (a > 5)",
@@ -106,6 +110,7 @@ class TestReplaceConstraint(db.TemporaryTable):
 
 
 class TestReplaceNamedConstraint(db.TemporaryTable):
+    mixed_case = False
     null = ""
     datatypes = [
         "integer CONSTRAINT asize CHECK (a > 5)",
@@ -119,6 +124,7 @@ class TestReplaceNamedConstraint(db.TemporaryTable):
 
 
 class TestReplaceUniqueIndex(db.TemporaryTable):
+    mixed_case = False
     null = ""
     datatypes = [
         "integer UNIQUE",
@@ -137,6 +143,7 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
 
 
 class TestReplaceView(db.TemporaryTable):
+    mixed_case = False
     datatypes = ["integer"]
 
     def test_replace_with_view(self, conn, cursor, schema_table):
@@ -150,6 +157,7 @@ class TestReplaceView(db.TemporaryTable):
 
 
 class TestReplaceViewMultiSchema(db.TemporaryTable):
+    mixed_case = False
     tempschema = False
     datatypes = ["integer"]
 
@@ -164,6 +172,7 @@ class TestReplaceViewMultiSchema(db.TemporaryTable):
 
 
 class TestReplaceTrigger(db.TemporaryTable):
+    mixed_case = False
     null = ""
     datatypes = [
         "integer",
@@ -196,6 +205,7 @@ class TestReplaceTrigger(db.TemporaryTable):
 
 
 class TestReplaceSequence(db.TemporaryTable):
+    mixed_case = False
     null = ""
     datatypes = [
         "integer",
