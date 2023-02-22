@@ -49,6 +49,7 @@ class TemporaryTable(object):
         if not self.mixed_case:
             self.table = self.__class__.__name__.lower()
         self.cols = [self.colname(i) for i in range(len(self.datatypes))]
+        self.select_list = ','.join('"{}"'.format(c) for c in self.cols)
 
     def create_sql(self, tempschema=None):
         col_ids = ['"{}"'.format(c) for c in self.cols]
