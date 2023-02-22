@@ -30,8 +30,6 @@ datagen = {
     "char(12)": genstr12,
 }
 
-colname = lambda i: chr(ord("a") + i)
-
 
 class TemporaryTable(object):
     tempschema = True
@@ -40,14 +38,21 @@ class TemporaryTable(object):
     record_count = 0
     mixed_case = True
 
+    def colname(self, i):
+        char = chr(ord("a") + i)
+        if self.mixed_case:
+            return "COL_" + char
+        return char
+
     def setup_method(self):
         self.table = self.__class__.__name__
         if not self.mixed_case:
             self.table = self.__class__.__name__.lower()
-        self.cols = [colname(i) for i in range(len(self.datatypes))]
+        self.cols = [self.colname(i) for i in range(len(self.datatypes))]
 
     def create_sql(self, tempschema=None):
-        colsql = [(c, t, self.null) for c, t in zip(self.cols, self.datatypes)]
+        col_ids = ['"{}"'.format(c) for c in self.cols]
+        colsql = [(c, t, self.null) for c, t in zip(col_ids, self.datatypes)]
         collist = ", ".join(map(" ".join, colsql))
         if tempschema:
             return 'CREATE TEMPORARY TABLE "{}" ({})'.format(self.table, collist)

@@ -33,7 +33,7 @@ class TypeMixin(db.TemporaryTable):
     def test_type(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data)
-        select_list = ",".join(self.cols)
+        select_list = ",".join('"{}"'.format(c) for c in self.cols)
         schema, table = schema_table.split(".")
         cursor.execute('SELECT %s from "%s"."%s"' % (select_list, schema, table))
         self.checkResults(cursor, data)
