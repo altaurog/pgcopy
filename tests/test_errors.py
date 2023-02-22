@@ -6,7 +6,7 @@ class TestErrors(db.TemporaryTable):
     datatypes = ['integer']
     def test_nosuchcolumn(self, conn, schema):
         col = self.cols[0] + '_does_not_exist'
-        msg = '"{}" is not a column of table "{}"."{}"'
+        msg = '{} is not a column of table {}.{}'
         with pytest.raises(ValueError, match=msg.format(col, schema, self.table)):
             CopyManager(conn, self.table, [col])
 
@@ -32,6 +32,6 @@ class TestDroppedCol(db.TemporaryTable):
         sql = 'ALTER TABLE {} DROP COLUMN {}'
         col = self.cols[1]
         cursor.execute(sql.format(self.table, col))
-        msg = '"{}" is not a column of table "{}"."{}"'
+        msg = '{} is not a column of table {}.{}'
         with pytest.raises(ValueError, match=msg.format(col, schema, self.table)):
             CopyManager(conn, self.table, self.cols)

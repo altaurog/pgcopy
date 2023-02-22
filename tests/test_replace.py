@@ -1,5 +1,8 @@
 import contextlib
+import os
+
 import psycopg2
+import psycopg2.sql
 import pytest
 from pgcopy import Replace
 from pgcopy import util
@@ -10,18 +13,29 @@ class TestRenameReplace(db.TemporaryTable):
     datatypes = ['integer']
 
     def test_rename_replace(self, conn, cursor, schema):
-        viewsql = "CREATE VIEW v AS SELECT a + 1 FROM {}"
-        cursor.execute(viewsql.format(self.table))
+        if not schema.startswith("pg_"):
+            cursor.execute(
+                "CREATE SCHEMA IF NOT EXISTS {}".format(
+                    psycopg2.sql.Identifier(schema).as_string(cursor)
+                )
+            )
+        schema_qualified_table = psycopg2.sql.Identifier(schema, self.table).as_string(cursor)
+        schema_qualified_table_v = psycopg2.sql.Identifier(schema, "v").as_string(cursor)
+        viewsql = "CREATE VIEW {} AS SELECT a + 1 FROM {}"
+        cursor.execute(viewsql.format(schema_qualified_table_v,
+                                      schema_qualified_table))
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        cursor.executemany(sql.format(self.table), [(1,), (2,)])
-        xform = lambda s: s + '_old'
+        cursor.executemany(sql.format(schema_qualified_table), [(1,), (2,)])
+        xform = lambda s: (s[1:-1] if s.startswith('"') and s.endswith('"') and len(s) > 1 else s) + '_old'
         with util.RenameReplace(conn, self.table, xform) as temp:
             cursor.executemany(sql.format(temp), [(36,), (72,)])
-        cursor.execute('SELECT * FROM {}'.format(self.table))
+        cursor.execute('SELECT * FROM {}'.format(schema_qualified_table))
         assert list(cursor) == [(36,), (72,)]
-        cursor.execute('SELECT * FROM v')
+        cursor.execute('SELECT * FROM {}'.format(schema_qualified_table_v))
         assert list(cursor) == [(37,), (73,)]
-        cursor.execute('SELECT * FROM {}'.format(self.table + '_old'))
+        cursor.execute('SELECT * FROM {}'.format(
+            psycopg2.sql.Identifier(schema, self.table + '_old').as_string(cursor)
+        ))
         assert list(cursor) == [(1,), (2,)]
 
 

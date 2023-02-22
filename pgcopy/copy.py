@@ -257,8 +257,8 @@ class CopyManager(object):
         for column in self.cols:
             att = type_dict.get(column)
             if att is None:
-                message = '"%s" is not a column of table %s.%s'
-                raise ValueError(message % (column, self.schema, self.table))
+                message = '{} is not a column of table {}.{}'
+                raise ValueError(message.format(column, self.schema, self.table))
             funcs = [encode, maxsize, array, diagnostic, null]
             reducer = lambda f, mf: mf(att, encoding, f)
             f = functools.reduce(reducer, funcs, get_formatter(att))

@@ -2,6 +2,7 @@ import collections
 import re
 import random
 import string
+from collections.abc import Iterable
 from datetime import datetime, time
 from six import string_types
 
@@ -26,7 +27,7 @@ def array_info(arr):
 
 def array_iter(arr):
     for i in arr:
-        if isinstance(i, collections.Iterable) and not isinstance(i, string_types):
+        if isinstance(i, Iterable) and not isinstance(i, string_types):
             for x in array_iter(i):
                 yield x
         else:
@@ -103,6 +104,7 @@ class Replace(object):
             self.schema, self.table = table.rsplit('.', 1)
         else:
             self.schema, self.table = get_schema(connection, table), table
+        self.schema_qualified_table = psycopg2.sql.Identifier(self.schema, self.table).as_string(self.cursor)
         self.schema = psycopg2.sql.Identifier(self.schema).as_string(self.cursor)
         self.table = psycopg2.sql.Identifier(self.table).as_string(self.cursor)
         self.name_re = idre(self.table)
@@ -196,7 +198,7 @@ class Replace(object):
         create = 'CREATE TABLE {} AS TABLE {} WITH NO DATA'
         self.cursor.execute(create.format(
             self.temp_name,
-            self.table
+            self.schema_qualified_table
         ))
 
     def create_defaults(self):
@@ -244,7 +246,7 @@ class Replace(object):
             self.cursor.execute(newsql)
             self.rename.append((
                 'TRIGGER',
-                '{} ON {}'.format(psycopg2.sql.Identifier(newtrigname).as_string(self.cursor), self.table),
+                '{} ON {}'.format(psycopg2.sql.Identifier(newtrigname).as_string(self.cursor), self.schema_qualified_table),
                 psycopg2.sql.Identifier(oldtrigname).as_string(self.cursor),
             ))
 
@@ -257,8 +259,9 @@ class Replace(object):
 
     def drop_views(self):
         for schema, viewname, viewdef in self.views:
+            view_name = psycopg2.sql.Identifier(schema, viewname).as_string(self.cursor)
             sql = 'DROP VIEW {}'.format(
-                psycopg2.sql.Identifier(viewname, schema).as_string(self.cursor)
+                view_name
             )
             self.cursor.execute(sql)
 
@@ -266,7 +269,7 @@ class Replace(object):
         dropdefsql = 'ALTER TABLE {} ALTER COLUMN {} DROP DEFAULT'
         for col, default in self.defaults:
             self.cursor.execute(dropdefsql.format(
-                self.table, psycopg2.sql.Identifier(col).as_string(self.cursor)
+                self.schema_qualified_table, psycopg2.sql.Identifier(col).as_string(self.cursor)
             ))
 
     def move_sequences(self):
@@ -278,20 +281,20 @@ class Replace(object):
             ))
 
     def drop_original_table(self):
-        self.cursor.execute('DROP TABLE {}'.format(self.table))
+        self.cursor.execute('DROP TABLE {}'.format(self.schema_qualified_table))
 
     def rename_temp_table(self):
         template = 'ALTER {} {} RENAME TO {}'
         for obj_type, oldname, newname in self.rename:
             self.cursor.execute(template.format(
-                *map(lambda s: psycopg2.sql.Identifier(s).as_string(self.cursor),
-                     (obj_type, oldname, newname))))
+                obj_type, oldname, newname
+            ))
 
     def create_views(self):
         viewsql = 'CREATE VIEW {} AS {}'
         for schema, viewname, viewdef in self.views:
-            sql = viewsql.format(psycopg2.sql.Identifier(viewname, schema).as_string(self.cursor),
-                                 psycopg2.sql.Identifier(viewdef).as_string(self.cursor))
+            sql = viewsql.format(psycopg2.sql.Identifier(schema, viewname).as_string(self.cursor),
+                                 viewdef)
             self.cursor.execute(sql)
 
 
@@ -356,9 +359,11 @@ class RenameReplace(Replace):
         sql = 'ALTER {} {} RENAME TO {}'
         for objtype, temp, orig in self.rename:
             new_name = self.xform(orig)
+            print("orig %{}%\n"
+                  "new_name %{}%\n".format(orig, new_name))
             self.cursor.execute(sql.format(
-                *map(lambda s: psycopg2.sql.Identifier(s).as_string(self.cursor),
-                     (objtype, orig, new_name))
+                objtype,
+                orig, new_name
             ))
         super(RenameReplace, self).rename_temp_table()
 
