@@ -31,7 +31,7 @@ def simple_formatter(fmt):
 
 def str_formatter(val):
     size = len(val)
-    return ('i%ss' % size, (size, val))
+    return 'i{}s'.format(size), (size, val)
 
 psql_epoch = 946684800
 psql_epoch_date = date(2000, 1, 1)
@@ -67,7 +67,7 @@ def numeric(n):
     try:
         nt = n.as_tuple()
     except AttributeError:
-        raise TypeError('numeric field requires Decimal value (got %r)' % n)
+        raise TypeError('numeric field requires Decimal value (got {!r})'.format(n))
     digits = []
     if isinstance(nt.exponent, str):
         # NaN, Inf, -Inf
@@ -91,7 +91,7 @@ def numeric(n):
         sign = nt.sign * 0x4000
         dscale = -min(0, nt.exponent)
     data = [ndigits, weight, sign, dscale] + digits
-    return ('ihhHH%dH' % ndigits, [2 * len(data)] + data)
+    return ('ihhHH{:d}H'.format(ndigits), [2 * len(data)] + data)
 
 def ndig(a):
     res = 0
@@ -103,7 +103,7 @@ def ndig(a):
 def jsonb_formatter(val):
     size = len(val)
     # first char must me binary format of jsonb in postgresql
-    return 'ib%is' % size, (size + 1, 1, val)
+    return 'ib{:d}s'.format(size), (size + 1, 1, val)
 
 
 def uuid_formatter(guid):

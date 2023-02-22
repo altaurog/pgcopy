@@ -18,7 +18,7 @@ class PGCopyBenchmark(db.TemporaryTable):
 
     def check_count(self):
         cursor = self.conn.cursor()
-        query = "SELECT count(*) FROM %s" % self.schema_table
+        query = "SELECT count(*) FROM {}".format(self.schema_table)
         cursor.execute(query)
         assert (cursor.fetchone()[0] == self.record_count)
 
@@ -30,7 +30,7 @@ class PGCopyBenchmark(db.TemporaryTable):
 
     def teardown(self):
         super(PGCopyBenchmark, self).teardown()
-        print("%30s: %6.02fs" % (self.__class__.__name__, self.elapsed_time))
+        print("{:>30}: {:6.02f}s".format(self.__class__.__name__, self.elapsed_time))
 
 
 class ExecuteManyBenchmark(PGCopyBenchmark):
@@ -42,8 +42,8 @@ class ExecuteManyBenchmark(PGCopyBenchmark):
     def do_copy(self):
         cols = ','.join(self.cols)
         paramholders = ','.join(['%s'] * len(self.cols))
-        sql = "INSERT INTO %s (%s) VALUES (%s)" \
-                % (self.schema_table, cols, paramholders)
+        sql = "INSERT INTO {} ({}) VALUES ({})" \
+            .format(self.schema_table, cols, paramholders)
         cursor = self.conn.cursor()
         cursor.executemany(sql, self.data)
 
