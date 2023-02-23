@@ -1,23 +1,26 @@
-import re
 import random
+import re
 import string
 from datetime import datetime, time
+
 from pytz import UTC
+
 
 def array_info(arr):
     """
     returns ndims, *lengths
     """
     if not isinstance(arr, (list, tuple, set)):
-        return 0,
+        return (0,)
     subs = set([array_info(elem) for elem in arr])
     if len(subs) > 1:
-        raise ValueError('subarray dimensions must match')
+        raise ValueError("subarray dimensions must match")
     if len(subs) == 0:
         return 1, 0
     s = subs.pop()
     dim, lengths = s[0], s[1:]
     return (dim + 1, len(arr)) + lengths
+
 
 def array_iter(arr):
     for i in arr:
@@ -26,6 +29,7 @@ def array_iter(arr):
                 yield x
         else:
             yield i
+
 
 def get_schema(conn, table):
     cur = conn.cursor()
@@ -38,6 +42,7 @@ def get_schema(conn, table):
     cur.execute(query, (table,))
     return cur.fetchone()[0]
 
+
 def to_utc(dt):
     if not isinstance(dt, datetime):
         dt = datetime(dt.year, dt.month, dt.day)
@@ -46,19 +51,24 @@ def to_utc(dt):
     else:
         return dt.astimezone(UTC)
 
+
 def to_utc_time(t):
     if not isinstance(t, time):
         t = time(t.hour, t.minute, t.second, t.microsecond)
-    
+
     return UTC.localize(t)
 
+
 source = string.ascii_lowercase + string.digits
+
+
 def uid():
     vals = [random.choice(source) for i in range(5)]
-    return ''.join(vals)
+    return "".join(vals)
 
 
-idre = lambda name: re.compile(r'\b%s\b' % re.escape(name))
+idre = lambda name: re.compile(r"\b%s\b" % re.escape(name))
+
 
 class Replace(object):
     """
@@ -92,16 +102,17 @@ class Replace(object):
 
     .. _will fail: https://gist.github.com/altaurog/ab0019837719d2a93e6b
     """
+
     def __init__(self, connection, table):
         self.cursor = connection.cursor()
         self.uid = uid()
-        if '.' in table:
-            self.schema, self.table = table.rsplit('.', 1)
+        if "." in table:
+            self.schema, self.table = table.rsplit(".", 1)
         else:
             self.schema, self.table = get_schema(connection, table), table
         self.name_re = idre(self.table)
         self.temp_name = self.newname()
-        self.rename = [('TABLE', self.nameformat(self.temp_name), self.table)]
+        self.rename = [("TABLE", self.nameformat(self.temp_name), self.table)]
         self.inspect()
 
     def __enter__(self):
@@ -148,7 +159,7 @@ class Replace(object):
             """
         self.cursor.execute(attquery, (self.nameformat(self.table),))
         self.notnull = [an for (an,) in self.cursor]
-        # primary key is recreated as a constraint, 
+        # primary key is recreated as a constraint,
         # but all other unique constraints are only
         # recreated as unique index
         conquery = """
@@ -187,18 +198,17 @@ class Replace(object):
         self.views = self.cursor.fetchall()
 
     def create_temp(self):
-        create = 'CREATE TABLE {} AS TABLE {} WITH NO DATA'
-        self.cursor.execute(create.format(
-            self.nameformat(self.temp_name),
-            self.nameformat(self.table)
-        ))
+        create = "CREATE TABLE {} AS TABLE {} WITH NO DATA"
+        self.cursor.execute(
+            create.format(self.nameformat(self.temp_name), self.nameformat(self.table))
+        )
 
     def create_defaults(self):
         defsql = 'ALTER TABLE {} ALTER COLUMN "{}" SET DEFAULT {}'
         for col, default in self.defaults:
-            self.cursor.execute(defsql.format(
-                self.nameformat(self.temp_name), col, default
-            ))
+            self.cursor.execute(
+                defsql.format(self.nameformat(self.temp_name), col, default)
+            )
 
     def create_notnull(self):
         nnsql = 'ALTER TABLE {} ALTER COLUMN "{}" SET NOT NULL'
@@ -208,30 +218,32 @@ class Replace(object):
     def create_constraints(self):
         consql = 'ALTER TABLE {} ADD CONSTRAINT "{}" {}'
         for i, (contype, conname, condef) in enumerate(self.constraints):
-            newname = self.newname('con', i)
-            self.cursor.execute(consql.format(
-                self.nameformat(self.temp_name), newname, condef
-            ))
-            if 'p' == contype:
-                self.rename.append(('INDEX', self.nameformat(newname), conname))
+            newname = self.newname("con", i)
+            self.cursor.execute(
+                consql.format(self.nameformat(self.temp_name), newname, condef)
+            )
+            if "p" == contype:
+                self.rename.append(("INDEX", self.nameformat(newname), conname))
 
     def create_indices(self):
         for i, (oldidxname, indexsql) in enumerate(self.indices):
-            newidxname = self.newname('idx', i)
+            newidxname = self.newname("idx", i)
             newsql = self.sqlrename(indexsql, oldidxname, newidxname)
             self.cursor.execute(newsql)
-            self.rename.append(('INDEX', self.nameformat(newidxname), oldidxname))
+            self.rename.append(("INDEX", self.nameformat(newidxname), oldidxname))
 
     def create_triggers(self):
         for i, (oldtrigname, trigsql) in enumerate(self.triggers):
-            newtrigname = self.newname('tg', i)
+            newtrigname = self.newname("tg", i)
             newsql = self.sqlrename(trigsql, oldtrigname, newtrigname)
             self.cursor.execute(newsql)
-            self.rename.append((
-                'TRIGGER',
-                '%s ON %s' % (newtrigname, self.nameformat(self.table)),
-                oldtrigname,
-            ))
+            self.rename.append(
+                (
+                    "TRIGGER",
+                    "%s ON %s" % (newtrigname, self.nameformat(self.table)),
+                    oldtrigname,
+                )
+            )
 
     def swap(self):
         self.drop_views()
@@ -242,7 +254,7 @@ class Replace(object):
 
     def drop_views(self):
         for schema, viewname, viewdef in self.views:
-            sql = 'DROP VIEW {}'.format(self.nameformat(viewname, schema))
+            sql = "DROP VIEW {}".format(self.nameformat(viewname, schema))
             self.cursor.execute(sql)
 
     def drop_defaults(self):
@@ -253,38 +265,38 @@ class Replace(object):
     def move_sequences(self):
         seqownersql = 'ALTER SEQUENCE "{}" OWNED BY {}."{}"'
         for col, seq in self.sequences:
-            self.cursor.execute(seqownersql.format(
-                seq, self.nameformat(self.temp_name), col
-            ))
+            self.cursor.execute(
+                seqownersql.format(seq, self.nameformat(self.temp_name), col)
+            )
 
     def drop_original_table(self):
-        self.cursor.execute('DROP TABLE {}'.format(self.nameformat(self.table)))
+        self.cursor.execute("DROP TABLE {}".format(self.nameformat(self.table)))
 
     def rename_temp_table(self):
-        template = 'ALTER {} {} RENAME TO {}'
+        template = "ALTER {} {} RENAME TO {}"
         for obj_type, oldname, newname in self.rename:
             self.cursor.execute(template.format(obj_type, oldname, newname))
 
     def create_views(self):
-        viewsql = 'CREATE VIEW {} AS {}'
+        viewsql = "CREATE VIEW {} AS {}"
         for schema, viewname, viewdef in self.views:
             sql = viewsql.format(self.nameformat(viewname, schema), viewdef)
             self.cursor.execute(sql)
 
+    unsafe_re = re.compile(r"\W+")
 
-    unsafe_re = re.compile(r'\W+')
     def newname(self, pre=None, i=None):
-        parts = ['%s']
+        parts = ["%s"]
         vals = [self.table]
         if pre is not None:
-            parts.append('%s')
+            parts.append("%s")
             vals.append(pre)
         if i is not None:
-            parts.append('%02d')
+            parts.append("%02d")
             vals.append(i)
-        parts.append('%s')
+        parts.append("%s")
         vals.append(self.uid)
-        return self.unsafe_re.sub('', '_'.join(parts) % tuple(vals)).lower()
+        return self.unsafe_re.sub("", "_".join(parts) % tuple(vals)).lower()
 
     def sqlrename(self, sql, *args):
         newsql = self.name_re.sub(self.temp_name, sql)
@@ -321,6 +333,7 @@ class RenameReplace(Replace):
             mgr = CopyManager(conn, temp_name, cols)
             mgr.copy(records)
     """
+
     def __init__(self, connection, table, xform):
         """
         xform must be a function which translates old

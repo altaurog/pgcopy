@@ -1,16 +1,19 @@
 from timeit import default_timer
+
 from pgcopy import CopyManager
+
 from . import db
+
 
 class PGCopyBenchmark(db.TemporaryTable):
     record_count = 100000
     datatypes = [
-            'integer',
-            'timestamp with time zone',
-            'double precision',
-            'varchar(12)',
-            'bool',
-        ]
+        "integer",
+        "timestamp with time zone",
+        "double precision",
+        "varchar(12)",
+        "bool",
+    ]
 
     def do_copy(self):
         mgr = CopyManager(self.conn, self.schema_table, self.cols)
@@ -20,7 +23,7 @@ class PGCopyBenchmark(db.TemporaryTable):
         cursor = self.conn.cursor()
         query = "SELECT count(*) FROM %s" % self.schema_table
         cursor.execute(query)
-        assert (cursor.fetchone()[0] == self.record_count)
+        assert cursor.fetchone()[0] == self.record_count
 
     def benchmark(self):
         start = default_timer()
@@ -40,15 +43,18 @@ class ExecuteManyBenchmark(PGCopyBenchmark):
         self.data = [decode(d) for d in self.data]
 
     def do_copy(self):
-        cols = ','.join(self.cols)
-        paramholders = ','.join(['%s'] * len(self.cols))
-        sql = "INSERT INTO %s (%s) VALUES (%s)" \
-                % (self.schema_table, cols, paramholders)
+        cols = ",".join(self.cols)
+        paramholders = ",".join(["%s"] * len(self.cols))
+        sql = "INSERT INTO %s (%s) VALUES (%s)" % (
+            self.schema_table,
+            cols,
+            paramholders,
+        )
         cursor = self.conn.cursor()
         cursor.executemany(sql, self.data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     for cls in ExecuteManyBenchmark, PGCopyBenchmark:
         benchmark = cls()
         benchmark.setup()
