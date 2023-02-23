@@ -45,7 +45,7 @@ class TypeMixin(db.TemporaryTable):
 
     def create_sql(self, *args, **kwargs):
         table_sql = super(TypeMixin, self).create_sql(*args, **kwargs)
-        return ";".join(filter(None, [self.extra_sql, table_sql]))
+        return psycopg2.sql.SQL(";").join(filter(None, [self.extra_sql, table_sql]))
 
     expected = cast
 

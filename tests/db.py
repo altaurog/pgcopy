@@ -46,10 +46,10 @@ class TemporaryTable(object):
 
     def create_sql(self, tempschema=None):
         colsql = ((c, t, self.null) for c, t in zip(self.cols, self.datatypes))
-        collist = psycopg2.sql.Composed(', '.join(map(' '.join, colsql)))
-        return psycopg2.sql.SQL(
-            "CREATE TEMPORARY TABLE {} ({})" if tempschema else "CREATE TABLE public.{} ({})"
-        ).format(psycopg2.sql.Identifier(self.table), collist)
+        collist = ', '.join(map(' '.join, colsql))
+        return psycopg2.sql.SQL("{} ({})".format(psycopg2.sql.SQL(
+            "CREATE TEMPORARY TABLE {}" if tempschema else "CREATE TABLE public.{}"
+        ).format(psycopg2.sql.Identifier(self.table)), collist))
 
     def generate_data(self, count):
         gen = [datagen[t] for t in self.datatypes]

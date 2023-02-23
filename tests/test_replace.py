@@ -15,8 +15,7 @@ class TestRenameReplace(db.TemporaryTable):
     def test_rename_replace(self, conn, cursor, schema):
         if not schema.startswith("pg_"):
             cursor.execute(
-                psycopg2.sql.SQL(
-                "CREATE SCHEMA IF NOT EXISTS {}").format(
+                psycopg2.sql.SQL("CREATE SCHEMA IF NOT EXISTS {}").format(
                     psycopg2.sql.Identifier(schema)
                 )
             )

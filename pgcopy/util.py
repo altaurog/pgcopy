@@ -41,7 +41,7 @@ def get_schema(conn, table):
         JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
         WHERE c.oid = %s::regclass
         """)
-    cur.execute(query, (psycopg2.sql.Identifier(table),))
+    cur.execute(query, (table,))
     return cur.fetchone()[0]
 
 def to_utc(dt):
@@ -361,8 +361,6 @@ class RenameReplace(Replace):
         sql = psycopg2.sql.SQL('ALTER {} {} RENAME TO {}')
         for objtype, temp, orig in self.rename:
             new_name = self.xform(orig)
-            print("orig %{}%\n"
-                  "new_name %{}%\n".format(orig, new_name))
             self.cursor.execute(sql.format(
                 objtype,
                 orig, new_name

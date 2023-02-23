@@ -85,8 +85,7 @@ def conn(request, db):
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         try:
-            print('inst.create_sql(inst.tempschema).as_string(cur):', inst.create_sql(inst.tempschema).as_string(cur), ';')
-            cur.execute(inst.create_sql(inst.tempschema).as_string(cur))
+            cur.execute(inst.create_sql(inst.tempschema))
         except psycopg2.ProgrammingError as e:
             conn.rollback()
             if '42704' == e.pgcode:
@@ -107,15 +106,9 @@ def cursor(conn):
 @pytest.fixture
 def schema(request, cursor):
     inst = request.instance
-    if isinstance(inst, TemporaryTable):
-        if not inst.tempschema:
-            return 'public'
-        cursor.execute(psycopg2.sql.SQL("""
-            SELECT nspname
-            FROM   pg_catalog.pg_namespace
-            WHERE  oid = pg_catalog.pg_my_temp_schema()
-        """))
-        return cursor.fetchall()[0][0]
+    if isinstance(inst, TemporaryTable) and not inst.tempschema:
+        return "pg_temp"
+    return 'public'
 
 
 @pytest.fixture
