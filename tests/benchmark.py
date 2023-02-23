@@ -1,4 +1,7 @@
 from timeit import default_timer
+
+import psycopg2.sql
+
 from pgcopy import CopyManager
 from . import db
 
@@ -18,7 +21,7 @@ class PGCopyBenchmark(db.TemporaryTable):
 
     def check_count(self):
         cursor = self.conn.cursor()
-        query = "SELECT count(*) FROM {}".format(self.schema_table)
+        query = psycopg2.sql.SQL("SELECT count(*) FROM {}").format(self.schema_table)
         cursor.execute(query)
         assert (cursor.fetchone()[0] == self.record_count)
 
@@ -40,9 +43,9 @@ class ExecuteManyBenchmark(PGCopyBenchmark):
         self.data = [decode(d) for d in self.data]
 
     def do_copy(self):
-        cols = ','.join(self.cols)
-        paramholders = ','.join(['%s'] * len(self.cols))
-        sql = "INSERT INTO {} ({}) VALUES ({})" \
+        cols = psycopg2.sql.SQL(',').join(self.cols)
+        paramholders = psycopg2.sql.SQL(', ').join(psycopg2.sql.Placeholder() * len(self.cols))
+        sql = psycopg2.sql.SQL("INSERT INTO {} ({}) VALUES ({})") \
             .format(self.schema_table, cols, paramholders)
         cursor = self.conn.cursor()
         cursor.executemany(sql, self.data)

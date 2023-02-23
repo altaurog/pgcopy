@@ -330,16 +330,15 @@ class CopyManager(object):
         cursor = self.conn.cursor()
         table_name = psycopg2.sql.Identifier(
             *(self.schema, self.table) if self.schema else (self.table,)
-        ).as_string(cursor)
+        )
         columns = psycopg2.sql.SQL(", ") \
             .join(
                 map(
                     psycopg2.sql.Identifier,
                     self.cols,
                 )
-            ) \
-            .as_string(cursor)
-        cmd = "COPY {} ({}) FROM STDIN WITH BINARY".format(table_name, columns)
+            )
+        cmd = psycopg2.sql.SQL("COPY {} ({}) FROM STDIN WITH BINARY").format(table_name, columns)
         try:
             cursor.copy_expert(cmd, datastream)
         except Exception as e:

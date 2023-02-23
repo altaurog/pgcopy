@@ -35,13 +35,13 @@ def array_iter(arr):
 
 def get_schema(conn, table):
     cur = conn.cursor()
-    query = """
+    query = psycopg2.sql.SQL("""
         SELECT n.nspname, c.relname
         FROM pg_catalog.pg_class c
         JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
         WHERE c.oid = %s::regclass
-        """
-    cur.execute(query, (psycopg2.sql.Identifier(table).as_string(cur),))
+        """)
+    cur.execute(query, (psycopg2.sql.Identifier(table),))
     return cur.fetchone()[0]
 
 def to_utc(dt):
@@ -104,11 +104,11 @@ class Replace(object):
             self.schema, self.table = table.rsplit('.', 1)
         else:
             self.schema, self.table = get_schema(connection, table), table
-        self.schema_qualified_table = psycopg2.sql.Identifier(self.schema, self.table).as_string(self.cursor)
-        self.schema = psycopg2.sql.Identifier(self.schema).as_string(self.cursor)
-        self.table = psycopg2.sql.Identifier(self.table).as_string(self.cursor)
+        self.schema_qualified_table = psycopg2.sql.Identifier(self.schema, self.table)
+        self.schema = psycopg2.sql.Identifier(self.schema)
+        self.table = psycopg2.sql.Identifier(self.table)
         self.name_re = idre(self.table)
-        self.temp_name = psycopg2.sql.Identifier(self.newname()).as_string(self.cursor)
+        self.temp_name = psycopg2.sql.Identifier(self.newname())
         self.rename = [('TABLE', self.temp_name, self.table)]
         self.inspect()
 
@@ -128,16 +128,16 @@ class Replace(object):
         self.cursor.close()
 
     def inspect(self):
-        defquery = """
+        defquery = psycopg2.sql.SQL("""
             SELECT attname, pg_catalog.pg_get_expr(adbin, adrelid)
             FROM pg_catalog.pg_attribute
             JOIN pg_catalog.pg_attrdef ON attrelid = adrelid AND adnum = attnum
             WHERE adnum > 0
             AND attrelid = %s::regclass
-            """
+            """)
         self.cursor.execute(defquery, (self.table,))
         self.defaults = self.cursor.fetchall()
-        seqquery = """
+        seqquery = psycopg2.sql.SQL("""
             SELECT attname, relname
             FROM pg_catalog.pg_class c
             JOIN pg_catalog.pg_depend ON (objid = c.oid)
@@ -145,79 +145,79 @@ class Replace(object):
                 ON (attnum=refobjsubid AND attrelid=refobjid)
             WHERE relkind = 'S'
             AND refobjid = %s::regclass
-            """
+            """)
         self.cursor.execute(seqquery, (self.table,))
         self.sequences = self.cursor.fetchall()
-        attquery = """
+        attquery = psycopg2.sql.SQL("""
             SELECT attname
             FROM pg_catalog.pg_attribute
             WHERE attrelid = %s::regclass
             AND attnum > 0 AND attnotnull
-            """
+            """)
         self.cursor.execute(attquery, (self.table,))
         self.notnull = [an for (an,) in self.cursor]
         # primary key is recreated as a constraint, 
         # but all other unique constraints are only
         # recreated as unique index
-        conquery = """
+        conquery = psycopg2.sql.SQL("""
             SELECT DISTINCT contype, conname, pg_catalog.pg_get_constraintdef(oid)
             FROM pg_catalog.pg_constraint
             WHERE conrelid = %s::regclass AND contype != 'u'
-            """
+            """)
         self.cursor.execute(conquery, (self.table,))
         self.constraints = self.cursor.fetchall()
-        indquery = """
+        indquery = psycopg2.sql.SQL("""
             SELECT c.relname, pg_catalog.pg_get_indexdef(i.indexrelid)
             FROM pg_catalog.pg_index i
             JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
             WHERE NOT indisprimary
             AND indrelid = %s::regclass
-            """
+            """)
         self.cursor.execute(indquery, (self.table,))
         self.indices = self.cursor.fetchall()
-        trigquery = """
+        trigquery = psycopg2.sql.SQL("""
             SELECT tgname, pg_catalog.pg_get_triggerdef(oid)
             FROM pg_catalog.pg_trigger
             WHERE tgconstraint = 0
             AND tgrelid=%s::regclass
-            """
+            """)
         self.cursor.execute(trigquery, (self.table,))
         self.triggers = self.cursor.fetchall()
-        viewquery = """
+        viewquery = psycopg2.sql.SQL("""
             SELECT DISTINCT n.nspname, c.relname, pg_catalog.pg_get_viewdef(r.ev_class)
             FROM pg_catalog.pg_rewrite r
             JOIN pg_catalog.pg_depend d ON d.objid = r.oid
             JOIN pg_catalog.pg_class c ON c.oid = r.ev_class
             JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
             WHERE d.refobjid = %s::regclass;
-            """
+            """)
         self.cursor.execute(viewquery, (self.table,))
         self.views = self.cursor.fetchall()
 
     def create_temp(self):
-        create = 'CREATE TABLE {} AS TABLE {} WITH NO DATA'
+        create = psycopg2.sql.SQL('CREATE TABLE {} AS TABLE {} WITH NO DATA')
         self.cursor.execute(create.format(
             self.temp_name,
             self.schema_qualified_table
         ))
 
     def create_defaults(self):
-        defsql = 'ALTER TABLE {} ALTER COLUMN {} SET DEFAULT {}'
+        defsql = psycopg2.sql.SQL('ALTER TABLE {} ALTER COLUMN {} SET DEFAULT {}')
         for col, default in self.defaults:
             self.cursor.execute(defsql.format(
                 self.temp_name,
-                psycopg2.sql.Identifier(col).as_string(self.cursor),
+                psycopg2.sql.Identifier(col),
                 default
             ))
 
     def create_notnull(self):
-        nnsql = 'ALTER TABLE {} ALTER COLUMN {} SET NOT NULL'
+        nnsql = psycopg2.sql.SQL('ALTER TABLE {} ALTER COLUMN {} SET NOT NULL')
         for col in self.notnull:
             self.cursor.execute(nnsql.format(self.temp_name,
-                                             psycopg2.sql.Identifier(col).as_string(self.cursor)))
+                                             psycopg2.sql.Identifier(col)))
 
     def create_constraints(self):
-        consql = 'ALTER TABLE {} ADD CONSTRAINT "{}" {}'
+        consql = psycopg2.sql.SQL('ALTER TABLE {} ADD CONSTRAINT {} {}')
         for i, (contype, conname, condef) in enumerate(self.constraints):
             newname = self.newname('con', i)
             self.cursor.execute(consql.format(
@@ -225,30 +225,34 @@ class Replace(object):
             ))
             if 'p' == contype:
                 self.rename.append((
-                    'INDEX', psycopg2.sql.Identifier(newname).as_string(self.cursor), conname
+                    'INDEX', psycopg2.sql.Identifier(newname), conname
                 ))
 
     def create_indices(self):
         for i, (oldidxname, indexsql) in enumerate(self.indices):
             newidxname = self.newname('idx', i)
-            newsql = self.sqlrename(indexsql, oldidxname, newidxname)
+            newsql = psycopg2.sql.SQL(self.sqlrename(indexsql, oldidxname, newidxname))
             self.cursor.execute(newsql)
             self.rename.append(
                 ('INDEX',
-                 psycopg2.sql.Identifier(newidxname).as_string(self.cursor),
+                 psycopg2.sql.Identifier(newidxname),
                  oldidxname)
             )
 
     def create_triggers(self):
         for i, (oldtrigname, trigsql) in enumerate(self.triggers):
             newtrigname = self.newname('tg', i)
-            newsql = self.sqlrename(trigsql, oldtrigname, newtrigname)
+            newsql = psycopg2.sql.SQL(self.sqlrename(trigsql, oldtrigname, newtrigname))
             self.cursor.execute(newsql)
-            self.rename.append((
-                'TRIGGER',
-                '{} ON {}'.format(psycopg2.sql.Identifier(newtrigname).as_string(self.cursor), self.schema_qualified_table),
-                psycopg2.sql.Identifier(oldtrigname).as_string(self.cursor),
-            ))
+            self.rename.append(
+                (
+                    'TRIGGER',
+                    psycopg2.sql.SQL('{} ON {}').format(
+                        psycopg2.sql.Identifier(self.schema, newtrigname),
+                        psycopg2.sql.Identifier(self.schema, oldtrigname)
+                    )
+                )
+            )
 
     def swap(self):
         self.drop_views()
@@ -259,41 +263,39 @@ class Replace(object):
 
     def drop_views(self):
         for schema, viewname, viewdef in self.views:
-            view_name = psycopg2.sql.Identifier(schema, viewname).as_string(self.cursor)
-            sql = 'DROP VIEW {}'.format(
-                view_name
-            )
+            view_name = psycopg2.sql.Identifier(schema, viewname)
+            sql = psycopg2.sql.SQL('DROP VIEW {}').format(view_name)
             self.cursor.execute(sql)
 
     def drop_defaults(self):
-        dropdefsql = 'ALTER TABLE {} ALTER COLUMN {} DROP DEFAULT'
+        dropdefsql = psycopg2.sql.SQL('ALTER TABLE {} ALTER COLUMN {} DROP DEFAULT')
         for col, default in self.defaults:
             self.cursor.execute(dropdefsql.format(
-                self.schema_qualified_table, psycopg2.sql.Identifier(col).as_string(self.cursor)
+                self.schema_qualified_table, psycopg2.sql.Identifier(col)
             ))
 
     def move_sequences(self):
-        seqownersql = 'ALTER SEQUENCE {} OWNED BY {}'
+        seqownersql = psycopg2.sql.SQL('ALTER SEQUENCE {} OWNED BY {}')
         for col, seq in self.sequences:
             self.cursor.execute(seqownersql.format(
-                psycopg2.sql.Identifier(seq, self.temp_name).as_string(self.cursor),
-                psycopg2.sql.Identifier(col).as_string(self.cursor)
+                psycopg2.sql.Identifier(seq, self.temp_name),
+                psycopg2.sql.Identifier(col)
             ))
 
     def drop_original_table(self):
-        self.cursor.execute('DROP TABLE {}'.format(self.schema_qualified_table))
+        self.cursor.execute(psycopg2.sql.SQL('DROP TABLE {}').format(self.schema_qualified_table))
 
     def rename_temp_table(self):
-        template = 'ALTER {} {} RENAME TO {}'
+        template = psycopg2.sql.SQL('ALTER {} {} RENAME TO {}')
         for obj_type, oldname, newname in self.rename:
             self.cursor.execute(template.format(
                 obj_type, oldname, newname
             ))
 
     def create_views(self):
-        viewsql = 'CREATE VIEW {} AS {}'
+        viewsql = psycopg2.sql.SQL('CREATE VIEW {} AS {}')
         for schema, viewname, viewdef in self.views:
-            sql = viewsql.format(psycopg2.sql.Identifier(schema, viewname).as_string(self.cursor),
+            sql = viewsql.format(psycopg2.sql.Identifier(schema, viewname),
                                  viewdef)
             self.cursor.execute(sql)
 
@@ -356,7 +358,7 @@ class RenameReplace(Replace):
         pass
 
     def rename_temp_table(self):
-        sql = 'ALTER {} {} RENAME TO {}'
+        sql = psycopg2.sql.SQL('ALTER {} {} RENAME TO {}')
         for objtype, temp, orig in self.rename:
             new_name = self.xform(orig)
             print("orig %{}%\n"

@@ -15,26 +15,27 @@ class TestRenameReplace(db.TemporaryTable):
     def test_rename_replace(self, conn, cursor, schema):
         if not schema.startswith("pg_"):
             cursor.execute(
-                "CREATE SCHEMA IF NOT EXISTS {}".format(
-                    psycopg2.sql.Identifier(schema).as_string(cursor)
+                psycopg2.sql.SQL(
+                "CREATE SCHEMA IF NOT EXISTS {}").format(
+                    psycopg2.sql.Identifier(schema)
                 )
             )
-        schema_qualified_table = psycopg2.sql.Identifier(schema, self.table).as_string(cursor)
-        schema_qualified_table_v = psycopg2.sql.Identifier(schema, "v").as_string(cursor)
-        viewsql = "CREATE VIEW {} AS SELECT a + 1 FROM {}"
+        schema_qualified_table = psycopg2.sql.Identifier(schema, self.table)
+        schema_qualified_table_v = psycopg2.sql.Identifier(schema, "v")
+        viewsql = psycopg2.sql.SQL("CREATE VIEW {} AS SELECT a + 1 FROM {}")
         cursor.execute(viewsql.format(schema_qualified_table_v,
                                       schema_qualified_table))
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         cursor.executemany(sql.format(schema_qualified_table), [(1,), (2,)])
-        xform = lambda s: (s[1:-1] if s.startswith('"') and s.endswith('"') and len(s) > 1 else s) + '_old'
+        xform = lambda s: (s[1:-1] if len(s) > 1 and ((s[0], s[-1]) in (('"', '"'), ("'", "'"))) else s) + '_old'
         with util.RenameReplace(conn, self.table, xform) as temp:
             cursor.executemany(sql.format(temp), [(36,), (72,)])
-        cursor.execute('SELECT * FROM {}'.format(schema_qualified_table))
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(schema_qualified_table))
         assert list(cursor) == [(36,), (72,)]
-        cursor.execute('SELECT * FROM {}'.format(schema_qualified_table_v))
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(schema_qualified_table_v))
         assert list(cursor) == [(37,), (73,)]
-        cursor.execute('SELECT * FROM {}'.format(
-            psycopg2.sql.Identifier(schema, self.table + '_old').as_string(cursor)
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(
+            psycopg2.sql.Identifier(schema, self.table + '_old')
         ))
         assert list(cursor) == [(1,), (2,)]
 
@@ -44,11 +45,11 @@ class TestReplaceFallbackSchema(db.TemporaryTable):
 
     def test_fallback_schema_honors_search_path(self, conn, cursor, schema, schema_table):
         cursor.execute(self.create_sql(tempschema=False))
-        cursor.execute('SET search_path TO {}'.format(schema))
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        cursor.execute(psycopg2.sql.SQL('SET search_path TO {}').format(schema))
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         with Replace(conn, self.table) as temp:
             cursor.execute(sql.format(temp), (1,))
-        cursor.execute('SELECT * FROM {}'.format(schema_table))
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(schema_table))
         assert list(cursor) == [(1,)]
 
 
@@ -63,10 +64,10 @@ class TestReplaceDefault(db.TemporaryTable):
     ]
 
     def test_replace_with_default(self, conn, cursor, schema_table):
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
-        cursor.execute('SELECT * FROM {}'.format(schema_table))
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(schema_table))
         assert list(cursor) == [(1, 3)]
 
 
@@ -93,10 +94,10 @@ class TestReplaceNotNull(db.TemporaryTable):
         """
         Not-null constraint is added on exit
         """
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         with replace_raises(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
-            cursor.execute('SELECT * FROM {}'.format(temp))
+            cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(temp))
             assert list(cursor) == [(1, None)]
 
 
@@ -107,10 +108,10 @@ class TestReplaceConstraint(db.TemporaryTable):
     ]
 
     def test_replace_constraint(self, conn, cursor, schema_table):
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         with replace_raises(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
-            cursor.execute('SELECT * FROM {}'.format(temp))
+            cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(temp))
             assert list(cursor) == [(1,)]
 
 
@@ -137,11 +138,11 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
         """
         Not-null constraint is added on exit
         """
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         with replace_raises(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute(sql.format(temp), (1,))
-            cursor.execute('SELECT * FROM {}'.format(temp))
+            cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(temp))
             assert list(cursor) == [(1,), (1,)]
 
 
@@ -149,12 +150,12 @@ class TestReplaceView(db.TemporaryTable):
     datatypes = ['integer']
 
     def test_replace_with_view(self, conn, cursor, schema_table):
-        viewsql = "CREATE VIEW v AS SELECT a + 1 FROM {}"
+        viewsql = psycopg2.sql.SQL("CREATE VIEW v AS SELECT a + 1 FROM {}")
         cursor.execute(viewsql.format(schema_table))
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
-        cursor.execute('SELECT * FROM v')
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM v'))
         assert list(cursor) == [(2,)]
 
 
@@ -163,12 +164,12 @@ class TestReplaceViewMultiSchema(db.TemporaryTable):
     datatypes = ['integer']
 
     def test_replace_view_in_different_schema(self, conn, cursor, schema_table):
-        viewsql = 'CREATE SCHEMA ns CREATE VIEW v AS SELECT a + 1 FROM {}'
+        viewsql = psycopg2.sql.SQL('CREATE SCHEMA ns CREATE VIEW v AS SELECT a + 1 FROM {}')
         cursor.execute(viewsql.format(schema_table))
-        sql = 'INSERT INTO public.{} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO public.{} ("a") VALUES (%s)')
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
-        cursor.execute('SELECT * FROM ns.v')
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM ns.v'))
         assert list(cursor) == [(2,)]
 
 
@@ -180,25 +181,25 @@ class TestReplaceTrigger(db.TemporaryTable):
     ]
 
     def test_replace_with_trigger(self, conn, cursor, schema_table):
-        cursor.execute("CREATE SCHEMA fs")
-        cursor.execute("""
+        cursor.execute(psycopg2.sql.SQL("CREATE SCHEMA fs"))
+        cursor.execute(psycopg2.sql.SQL("""
             CREATE FUNCTION fs.table_ins() RETURNS trigger AS $table_ins$
             BEGIN
                 NEW.b := NEW.a * 4;
                 RETURN NEW;
             END;
         $table_ins$ LANGUAGE plpgsql;
-        """)
-        trigsql = """
+        """))
+        trigsql = psycopg2.sql.SQL("""
             CREATE TRIGGER table_on_ins BEFORE INSERT ON {}
             FOR EACH ROW EXECUTE PROCEDURE fs.table_ins()
-        """
+        """)
         cursor.execute(trigsql.format(schema_table))
-        sql = 'INSERT INTO {} ("a", "b") VALUES (%s, %s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a", "b") VALUES (%s, %s)')
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1, 1))
         cursor.execute(sql.format(schema_table), (2, 1))
-        cursor.execute('SELECT * FROM {}'.format(schema_table))
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(schema_table))
         assert list(cursor) == [(1, 1), (2, 8)]
 
 
@@ -210,11 +211,11 @@ class TestReplaceSequence(db.TemporaryTable):
     ]
 
     def test_replace_with_sequence(self, conn, cursor, schema_table):
-        sql = 'INSERT INTO {} ("a") VALUES (%s)'
+        sql = psycopg2.sql.SQL('INSERT INTO {} ("a") VALUES (%s)')
         cursor.executemany(sql.format(schema_table), [(10,), (20,)])
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (30,))
             cursor.execute(sql.format(schema_table), (40,))
         cursor.execute(sql.format(schema_table), (40,))
-        cursor.execute('SELECT * FROM {}'.format(schema_table))
+        cursor.execute(psycopg2.sql.SQL('SELECT * FROM {}').format(schema_table))
         assert list(cursor) == [(30, 3), (40, 5)]

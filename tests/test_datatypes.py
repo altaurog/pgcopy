@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 import json
 import decimal
@@ -10,6 +11,7 @@ if sys.version_info < (3,):
     memoryview = buffer
 
 import psycopg2.extensions
+import psycopg2.sql
 from pgcopy import CopyManager, util
 
 from . import db
@@ -27,8 +29,8 @@ class TypeMixin(db.TemporaryTable):
     def test_type(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data)
-        select_list = ','.join(self.cols)
-        cursor.execute("SELECT {} from {}".format(select_list, schema_table))
+        select_list = psycopg2.sql.SQL(',').join(map(psycopg2.sql.Identifier, self.cols))
+        cursor.execute(psycopg2.sql.SQL("SELECT {} from {}").format(select_list, schema_table))
         self.checkResults(cursor, data)
 
     def checkResults(self, cursor, data):
@@ -198,7 +200,7 @@ class TestBytea(TypeMixin):
     data = [
         (b'\x02\xf3\x18\x44 alphabet',),
         (b'The\x00hippopotamus\x00jumped\x00over\x00the\x00lazy\x00tower',)
-    ,]
+    ]
 
     def cast(self, v):
         assert isinstance(v, memoryview)

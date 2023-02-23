@@ -1,4 +1,6 @@
 import pytest
+import psycopg2.sql
+
 from pgcopy import CopyManager
 from . import db
 
@@ -29,7 +31,7 @@ class TestFormatterDiagnostic(db.TemporaryTable):
 class TestDroppedCol(db.TemporaryTable):
     datatypes = ['integer', 'integer']
     def test_dropped_col(self, conn, cursor, schema):
-        sql = 'ALTER TABLE {} DROP COLUMN {}'
+        sql = psycopg2.sql.SQL('ALTER TABLE {} DROP COLUMN {}')
         col = self.cols[1]
         cursor.execute(sql.format(self.table, col))
         msg = '{} is not a column of table {}.{}'

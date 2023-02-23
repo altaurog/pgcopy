@@ -2,6 +2,8 @@ from datetime import datetime, date, time, timedelta
 from random import randint
 import hashlib
 
+import psycopg2.sql
+
 from pgcopy import util
 
 
@@ -43,11 +45,11 @@ class TemporaryTable(object):
         self.cols = [colname(i) for i in range(len(self.datatypes))]
 
     def create_sql(self, tempschema=None):
-        colsql = [(c, t, self.null) for c, t in zip(self.cols, self.datatypes)]
-        collist = ', '.join(map(' '.join, colsql))
-        if tempschema:
-            return "CREATE TEMPORARY TABLE {} ({})".format(self.table, collist)
-        return "CREATE TABLE public.{} ({})".format(self.table, collist)
+        colsql = ((c, t, self.null) for c, t in zip(self.cols, self.datatypes))
+        collist = psycopg2.sql.Composed(', '.join(map(' '.join, colsql)))
+        return psycopg2.sql.SQL(
+            "CREATE TEMPORARY TABLE {} ({})" if tempschema else "CREATE TABLE public.{} ({})"
+        ).format(psycopg2.sql.Identifier(self.table), collist)
 
     def generate_data(self, count):
         gen = [datagen[t] for t in self.datatypes]
