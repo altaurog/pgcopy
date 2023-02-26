@@ -200,7 +200,10 @@ class Replace(object):
     def create_temp(self):
         create = "CREATE TABLE {} AS TABLE {} WITH NO DATA"
         self.cursor.execute(
-            create.format(self.nameformat(self.temp_name), self.nameformat(self.table))
+            create.format(
+                self.nameformat(self.temp_name),
+                self.nameformat(self.table),
+            )
         )
 
     def create_defaults(self):
