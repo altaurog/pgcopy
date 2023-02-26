@@ -25,11 +25,5 @@ def get_types(conn, schema, table):
             ORDER BY c.relname, a.attnum;
             """
     cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-    cursor.execute(
-        query,
-        (
-            schema,
-            table,
-        ),
-    )
+    cursor.execute(query, (schema, table))
     return {r.attname: r for r in cursor}
