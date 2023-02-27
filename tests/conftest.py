@@ -1,21 +1,23 @@
 import os
 import sys
+
 import psycopg2
 import psycopg2.sql
-from psycopg2.extras import LoggingConnection
 import pytest
+from psycopg2.extras import LoggingConnection
+
 from .db import TemporaryTable
 
 connection_params = {
-    'dbname': os.getenv('POSTGRES_DB', 'pgcopy_test'),
-    'port': int(os.getenv('POSTGRES_PORT', '5432')),
-    'host': os.getenv('POSTGRES_HOST'),
-    'user': os.getenv('POSTGRES_USER'),
-    'password': os.getenv('POSTGRES_PASSWORD'),
+    "dbname": os.getenv("POSTGRES_DB", "pgcopy_test"),
+    "port": int(os.getenv("POSTGRES_PORT", "5432")),
+    "host": os.getenv("POSTGRES_HOST"),
+    "user": os.getenv("POSTGRES_USER"),
+    "password": os.getenv("POSTGRES_PASSWORD"),
 }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db():
     drop = create_db()
     yield
@@ -40,24 +42,26 @@ def create_db():
         connect().close()
         return False
     except psycopg2.OperationalError as exc:
-        nosuch_db = 'database "%s" does not exist' % connection_params['dbname']
+        nosuch_db = 'database "%s" does not exist' % connection_params["dbname"]
         if nosuch_db in str(exc):
             try:
-                master = connect(dbname='postgres')
+                master = connect(dbname="postgres")
                 master.rollback()
                 master.autocommit = True
                 cursor = master.cursor()
                 cursor.execute(
-                    psycopg2.sql.SQL('CREATE DATABASE {}').format(
-                        psycopg2.sql.Identifier(connection_params['dbname'])
+                    psycopg2.sql.SQL("CREATE DATABASE {}").format(
+                        psycopg2.sql.Identifier(connection_params["dbname"])
                     )
                 )
                 cursor.close()
                 master.close()
             except psycopg2.Error as exc:
-                message = ('Unable to connect to or create test db '
-                            + connection_params['dbname']
-                            + '.\nThe error is: %s' % exc)
+                message = (
+                    "Unable to connect to or create test db "
+                    + connection_params["dbname"]
+                    + ".\nThe error is: %s" % exc
+                )
                 raise RuntimeError(message)
             else:
                 return True
@@ -65,13 +69,15 @@ def create_db():
 
 def drop_db():
     "Drop test db"
-    master = connect(dbname='postgres')
+    master = connect(dbname="postgres")
     master.rollback()
     master.autocommit = True
     cursor = master.cursor()
-    cursor.execute(psycopg2.sql.SQL('DROP DATABASE {}').format(
-        psycopg2.sql.Identifier(connection_params['dbname'])
-    ))
+    cursor.execute(
+        psycopg2.sql.SQL("DROP DATABASE {}").format(
+            psycopg2.sql.Identifier(connection_params["dbname"])
+        )
+    )
     cursor.close()
     master.close()
 
@@ -80,7 +86,7 @@ def drop_db():
 def conn(request, db):
     conn = connect()
     conn.autocommit = False
-    conn.set_client_encoding(getattr(request, 'param', 'UTF8'))
+    conn.set_client_encoding(getattr(request, "param", "UTF8"))
     cur = conn.cursor()
     inst = request.instance
     if isinstance(inst, TemporaryTable):
@@ -88,8 +94,8 @@ def conn(request, db):
             cur.execute(inst.create_sql(inst.tempschema))
         except psycopg2.ProgrammingError as e:
             conn.rollback()
-            if '42704' == e.pgcode:
-                pytest.skip('Unsupported datatype')
+            if "42704" == e.pgcode:
+                pytest.skip("Unsupported datatype")
     cur.close()
     yield conn
     conn.rollback()
@@ -108,14 +114,14 @@ def schema(request, cursor):
     inst = request.instance
     if isinstance(inst, TemporaryTable) and not inst.tempschema:
         return "pg_temp"
-    return 'public'
+    return "public"
 
 
 @pytest.fixture
 def schema_table(request, schema):
     inst = request.instance
     if isinstance(inst, TemporaryTable):
-        return '{}.{}'.format(schema, inst.table)
+        return "{}.{}".format(schema, inst.table)
 
 
 @pytest.fixture

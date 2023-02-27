@@ -1,17 +1,22 @@
-from pgcopy import CopyManager, util
+from io import BytesIO
+
 import psycopg2.sql
 
-from io import BytesIO
+from pgcopy import CopyManager
+
 from .test_datatypes import TypeMixin
 
+
 class Test(TypeMixin):
-    datatypes = ['integer', 'bool', 'varchar(12)']
+    datatypes = ["integer", "bool", "varchar(12)"]
 
     def test_copy(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data, BytesIO)
-        select_list = psycopg2.sql.SQL(',').join(self.cols)
-        cursor.execute(psycopg2.sql.SQL("SELECT {} from {}").format(select_list, schema_table))
+        select_list = psycopg2.sql.SQL(",").join(self.cols)
+        cursor.execute(
+            psycopg2.sql.SQL("SELECT {} from {}").format(select_list, schema_table)
+        )
         self.checkResults(cursor, data)
 
     def cast(self, v):

@@ -1,13 +1,15 @@
 import psycopg2.sql
 from psycopg2.extras import NamedTupleCursor
 
+
 def get_types(conn, schema, table):
     # for arrays:
     # typname has '_' prefix
     # attndims > 0
     # typcategory is 'A'
     # typelem is typid of individual elem (otherwise zero)
-    query = psycopg2.sql.SQL("""
+    query = psycopg2.sql.SQL(
+        """
             SELECT
                     a.attname,
                     t.typcategory AS type_category,
@@ -23,7 +25,8 @@ def get_types(conn, schema, table):
                     LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
             WHERE n.nspname = %s and relname = %s and attnum > 0
             ORDER BY c.relname, a.attnum;
-            """)
+            """
+    )
     cursor = conn.cursor(cursor_factory=NamedTupleCursor)
     cursor.execute(query, (schema, table))
     return {r.attname: r for r in cursor}

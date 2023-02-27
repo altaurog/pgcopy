@@ -17,13 +17,13 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'pgcopy'
-copyright = '2021, Aryeh Leib Taurog'
-author = 'Aryeh Leib Taurog'
+project = "pgcopy"
+copyright = "2021, Aryeh Leib Taurog"
+author = "Aryeh Leib Taurog"
 
 # The full version, including alpha/beta/rc tags
-release = '1.5.0'
-master_doc = 'index'
+release = "1.5.0"
+master_doc = "index"
 
 # -- General configuration ---------------------------------------------------
 
@@ -31,13 +31,13 @@ master_doc = 'index'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosectionlabel',
-    'alabaster',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
+    "alabaster",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -50,24 +50,24 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = "alabaster"
 
 html_theme_options = {
-    'github_user': 'altaurog',
-    'github_repo': 'pgcopy',
-    'github_button': True,
-    'github_type': 'star',
-    'description': 'fast data loading with binary copy',
-    'fixed_sidebar': True,
-    'extra_nav_links': {
-        'github': 'https://github.com/altaurog/pgcopy',
-        'pypi': 'https://pypi.python.org/pypi/pgcopy',
-    }
+    "github_user": "altaurog",
+    "github_repo": "pgcopy",
+    "github_button": True,
+    "github_type": "star",
+    "description": "fast data loading with binary copy",
+    "fixed_sidebar": True,
+    "extra_nav_links": {
+        "github": "https://github.com/altaurog/pgcopy",
+        "pypi": "https://pypi.python.org/pypi/pgcopy",
+    },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 autosectionlabel_prefix_document = True

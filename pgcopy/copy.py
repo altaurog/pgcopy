@@ -2,10 +2,8 @@ import calendar
 import functools
 import os
 import struct
-import sys
 import tempfile
 import threading
-
 from datetime import date, datetime
 
 try:
@@ -15,46 +13,53 @@ except ImportError:
 
 import psycopg2.sql
 from psycopg2.extensions import encodings
+
 from . import errors, inspect, util
 
-__all__ = ['CopyManager']
+__all__ = ["CopyManager"]
 
-BINCOPY_HEADER = struct.pack('>11sii', b'PGCOPY\n\377\r\n\0', 0, 0)
-BINCOPY_TRAILER = struct.pack('>h', -1)
+BINCOPY_HEADER = struct.pack(">11sii", b"PGCOPY\n\377\r\n\0", 0, 0)
+BINCOPY_TRAILER = struct.pack(">h", -1)
 
 MAX_INT64 = 0xFFFFFFFFFFFFFFFF
 
 
 def simple_formatter(fmt):
-    size = struct.calcsize('>' + fmt)
-    return lambda val: ('i' + fmt, (size, val))
+    size = struct.calcsize(">" + fmt)
+    return lambda val: ("i" + fmt, (size, val))
+
 
 def str_formatter(val):
     size = len(val)
-    return 'i{}s'.format(size), (size, val)
+    return "i{}s".format(size), (size, val)
+
 
 psql_epoch = 946684800
 psql_epoch_date = date(2000, 1, 1)
 
+
 def timestamp(dt):
-    'get microseconds since 2000-01-01 00:00'
+    "get microseconds since 2000-01-01 00:00"
     # see http://stackoverflow.com/questions/2956886/
     dt = util.to_utc(dt)
     unix_timestamp = calendar.timegm(dt.timetuple())
     # timetuple doesn't maintain microseconds
     # see http://stackoverflow.com/a/14369386/519015
     val = ((unix_timestamp - psql_epoch) * 1000000) + dt.microsecond
-    return ('iq', (8, val))
+    return ("iq", (8, val))
+
 
 def time_formatter(t):
-    'get microseconds since 2000-01-01 00:00'
+    "get microseconds since 2000-01-01 00:00"
     t = util.to_utc_time(t)
     dt = datetime.combine(psql_epoch_date, t)
     return timestamp(dt)
 
+
 def datestamp(d):
-    'days since 2000-01-01'
-    return ('ii', (4, (d - psql_epoch_date).days))
+    "days since 2000-01-01"
+    return ("ii", (4, (d - psql_epoch_date).days))
+
 
 def numeric(n):
     """
@@ -67,7 +72,7 @@ def numeric(n):
     try:
         nt = n.as_tuple()
     except AttributeError:
-        raise TypeError('numeric field requires Decimal value (got {!r})'.format(n))
+        raise TypeError("numeric field requires Decimal value (got {!r})".format(n))
     digits = []
     if isinstance(nt.exponent, str):
         # NaN, Inf, -Inf
@@ -91,49 +96,50 @@ def numeric(n):
         sign = nt.sign * 0x4000
         dscale = -min(0, nt.exponent)
     data = [ndigits, weight, sign, dscale] + digits
-    return ('ihhHH{:d}H'.format(ndigits), [2 * len(data)] + data)
+    return ("ihhHH{:d}H".format(ndigits), [2 * len(data)] + data)
+
 
 def ndig(a):
     res = 0
     for i, d in enumerate(a):
-        res += d * 10 ** i
+        res += d * 10**i
     return res
 
 
 def jsonb_formatter(val):
     size = len(val)
     # first char must me binary format of jsonb in postgresql
-    return 'ib{:d}s'.format(size), (size + 1, 1, val)
+    return "ib{:d}s".format(size), (size + 1, 1, val)
 
 
 def uuid_formatter(guid):
-    return 'i2Q', (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
+    return "i2Q", (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
 
 
 type_formatters = {
-    'bool': simple_formatter('?'),
-    'int2': simple_formatter('h'),
-    'int4': simple_formatter('i'),
-    'int8': simple_formatter('q'),
-    'float4' : simple_formatter('f'),
-    'float8': simple_formatter('d'),
-    'varchar': str_formatter,
-    'bpchar': str_formatter,
-    'bytea': str_formatter,
-    'text': str_formatter,
-    'json': str_formatter,
-    'jsonb': jsonb_formatter,
-    'date': datestamp,
-    'time': time_formatter,
-    'timestamp': timestamp,
-    'timestamptz': timestamp,
-    'numeric': numeric,
-    'uuid': uuid_formatter,
+    "bool": simple_formatter("?"),
+    "int2": simple_formatter("h"),
+    "int4": simple_formatter("i"),
+    "int8": simple_formatter("q"),
+    "float4": simple_formatter("f"),
+    "float8": simple_formatter("d"),
+    "varchar": str_formatter,
+    "bpchar": str_formatter,
+    "bytea": str_formatter,
+    "text": str_formatter,
+    "json": str_formatter,
+    "jsonb": jsonb_formatter,
+    "date": datestamp,
+    "time": time_formatter,
+    "timestamp": timestamp,
+    "timestamptz": timestamp,
+    "numeric": numeric,
+    "uuid": uuid_formatter,
 }
 
 
 def null_formatter(formatter):
-    return lambda v: ('i', (-1,)) if v is None else formatter(v)
+    return lambda v: ("i", (-1,)) if v is None else formatter(v)
 
 
 def array_formatter(typelem, formatter, val):
@@ -152,49 +158,54 @@ def array_formatter(typelem, formatter, val):
     info = util.array_info(val)
     ndim, lengths = info[0], info[1:]
     if ndim == 0:
-        raise ValueError('{} is not an array type'.format(val))
+        raise ValueError("{} is not an array type".format(val))
     elems = list(util.array_iter(val))
-    fmt = ['>3i{}i'.format(2 * ndim)]
+    fmt = [">3i{}i".format(2 * ndim)]
     data = [ndim, None in elems, typelem] + [1] * ndim * 2
     data[3::2] = lengths
     for f, d in map(null_formatter(formatter), elems):
         fmt.append(f)
         data.extend(d)
-    return str_formatter(struct.pack(''.join(fmt), *data))
+    return str_formatter(struct.pack("".join(fmt), *data))
 
 
 def null(att, _, formatter):
     if not att.not_null:
         return null_formatter(formatter)
     message = 'null value in column "{}" not allowed'.format(att.attname)
+
     def nullcheck(v):
         if v is None:
             raise ValueError(message)
         return formatter(v)
+
     return nullcheck
 
 
 def array(att, _, formatter):
-    if att.type_category != 'A':
+    if att.type_category != "A":
         return formatter
     return lambda v: array_formatter(att.typelem, formatter, v)
 
 
 def maxsize(att, _, formatter):
-    if att.type_name not in ('varchar', 'bpchar'):
+    if att.type_name not in ("varchar", "bpchar"):
         return formatter
+
     def _maxsize(v):
         # postgres reports size + 4
         size = min(len(v), att.type_mod - 4) if att.type_mod >= 0 else len(v)
         return formatter(v[:size])
+
     return _maxsize
 
 
 def encode(att, encoding, formatter):
-    is_text_type = att.type_name in ('varchar', 'text', 'json')
-    is_enum_type = att.type_category == 'E'
+    is_text_type = att.type_name in ("varchar", "text", "json")
+    is_enum_type = att.type_category == "E"
     if not (is_text_type or is_enum_type):
         return formatter
+
     def _encode(v):
         try:
             encf = v.encode
@@ -202,26 +213,30 @@ def encode(att, encoding, formatter):
             return formatter(v)
         else:
             return formatter(encf(encoding))
+
     return _encode
 
+
 def diagnostic(att, encoding, formatter):
-    template = 'error formatting value {} for column {}'
+    template = "error formatting value {} for column {}"
+
     def f(v):
         try:
             return formatter(v)
         except Exception as exc:
             message = template.format(v, att.attname)
             errors.raise_from(ValueError, message, exc)
+
     return f
 
 
 def get_formatter(att):
-    if att.type_category == 'E':
+    if att.type_category == "E":
         return str_formatter
     try:
         return type_formatters[att.type_name]
     except KeyError:
-        raise TypeError('type {} is not supported'.format(att.type_name))
+        raise TypeError("type {} is not supported".format(att.type_name))
 
 
 class CopyManager(object):
@@ -241,10 +256,11 @@ class CopyManager(object):
 
     :raises ValueError: if the table or columns do not exist.
     """
+
     def __init__(self, conn, table, cols):
         self.conn = conn
-        if '.' in table:
-            self.schema, self.table = table.split('.', 1)
+        if "." in table:
+            self.schema, self.table = table.split(".", 1)
         else:
             self.schema, self.table = util.get_schema(conn, table), table
         self.cols = cols
@@ -257,7 +273,7 @@ class CopyManager(object):
         for column in self.cols:
             att = type_dict.get(column)
             if att is None:
-                message = '{} is not a column of table {}.{}'
+                message = "{} is not a column of table {}.{}"
                 raise ValueError(message.format(column, self.schema, self.table))
             funcs = [encode, maxsize, array, diagnostic, null]
             reducer = lambda f, mf: mf(att, encoding, f)
@@ -305,8 +321,8 @@ class CopyManager(object):
         :type data: iterable of iterables
         """
         r_fd, w_fd = os.pipe()
-        rstream = os.fdopen(r_fd, 'rb')
-        wstream = os.fdopen(w_fd, 'wb')
+        rstream = os.fdopen(r_fd, "rb")
+        wstream = os.fdopen(w_fd, "wb")
         copy_thread = threading.Thread(target=self.copystream, args=(rstream,))
         copy_thread.start()
         self.writestream(data, wstream)
@@ -317,13 +333,13 @@ class CopyManager(object):
         datastream.write(BINCOPY_HEADER)
         count = len(self.cols)
         for record in data:
-            fmt = ['>h']
+            fmt = [">h"]
             rdat = [count]
             for formatter, val in zip(self.formatters, record):
                 f, d = formatter(val)
                 fmt.append(f)
                 rdat.extend(d)
-            datastream.write(struct.pack(''.join(fmt), *rdat))
+            datastream.write(struct.pack("".join(fmt), *rdat))
         datastream.write(BINCOPY_TRAILER)
 
     def copystream(self, datastream):
@@ -331,14 +347,15 @@ class CopyManager(object):
         table_name = psycopg2.sql.Identifier(
             *(self.schema, self.table) if self.schema else (self.table,)
         )
-        columns = psycopg2.sql.SQL(", ") \
-            .join(
-                map(
-                    psycopg2.sql.Identifier,
-                    self.cols,
-                )
+        columns = psycopg2.sql.SQL(", ").join(
+            map(
+                psycopg2.sql.Identifier,
+                self.cols,
             )
-        cmd = psycopg2.sql.SQL("COPY {} ({}) FROM STDIN WITH BINARY").format(table_name, columns)
+        )
+        cmd = psycopg2.sql.SQL("COPY {} ({}) FROM STDIN WITH BINARY").format(
+            table_name, columns
+        )
         try:
             cursor.copy_expert(cmd, datastream)
         except Exception as e:

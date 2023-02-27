@@ -3,17 +3,19 @@ from timeit import default_timer
 import psycopg2.sql
 
 from pgcopy import CopyManager
+
 from . import db
+
 
 class PGCopyBenchmark(db.TemporaryTable):
     record_count = 100000
     datatypes = [
-            'integer',
-            'timestamp with time zone',
-            'double precision',
-            'varchar(12)',
-            'bool',
-        ]
+        "integer",
+        "timestamp with time zone",
+        "double precision",
+        "varchar(12)",
+        "bool",
+    ]
 
     def do_copy(self):
         mgr = CopyManager(self.conn, self.schema_table, self.cols)
@@ -23,7 +25,7 @@ class PGCopyBenchmark(db.TemporaryTable):
         cursor = self.conn.cursor()
         query = psycopg2.sql.SQL("SELECT count(*) FROM {}").format(self.schema_table)
         cursor.execute(query)
-        assert (cursor.fetchone()[0] == self.record_count)
+        assert cursor.fetchone()[0] == self.record_count
 
     def benchmark(self):
         start = default_timer()
@@ -43,15 +45,18 @@ class ExecuteManyBenchmark(PGCopyBenchmark):
         self.data = [decode(d) for d in self.data]
 
     def do_copy(self):
-        cols = psycopg2.sql.SQL(',').join(self.cols)
-        paramholders = psycopg2.sql.SQL(', ').join(psycopg2.sql.Placeholder() * len(self.cols))
-        sql = psycopg2.sql.SQL("INSERT INTO {} ({}) VALUES ({})") \
-            .format(self.schema_table, cols, paramholders)
+        cols = psycopg2.sql.SQL(",").join(self.cols)
+        paramholders = psycopg2.sql.SQL(", ").join(
+            psycopg2.sql.Placeholder() * len(self.cols)
+        )
+        sql = psycopg2.sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+            self.schema_table, cols, paramholders
+        )
         cursor = self.conn.cursor()
         cursor.executemany(sql, self.data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     for cls in ExecuteManyBenchmark, PGCopyBenchmark:
         benchmark = cls()
         benchmark.setup()
