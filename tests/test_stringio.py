@@ -1,5 +1,7 @@
 from io import BytesIO
 
+import psycopg2.sql
+
 from pgcopy import CopyManager
 
 from .test_datatypes import TypeMixin
@@ -11,8 +13,10 @@ class Test(TypeMixin):
     def test_copy(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data, BytesIO)
-        select_list = ",".join(self.cols)
-        cursor.execute("SELECT %s from %s" % (select_list, schema_table))
+        select_list = psycopg2.sql.SQL(",").join(self.cols)
+        cursor.execute(
+            psycopg2.sql.SQL("SELECT {} from {}").format(select_list, schema_table)
+        )
         self.checkResults(cursor, data)
 
     def cast(self, v):

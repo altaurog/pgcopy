@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 
 import decimal
@@ -12,6 +13,7 @@ if sys.version_info < (3,):
     memoryview = buffer
 
 import psycopg2.extensions
+import psycopg2.sql
 
 from pgcopy import CopyManager, util
 
@@ -34,8 +36,12 @@ class TypeMixin(db.TemporaryTable):
     def test_type(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data)
-        select_list = ",".join(self.cols)
-        cursor.execute("SELECT %s from %s" % (select_list, schema_table))
+        select_list = psycopg2.sql.SQL(",").join(
+            map(psycopg2.sql.Identifier, self.cols)
+        )
+        cursor.execute(
+            psycopg2.sql.SQL("SELECT {} from {}").format(select_list, schema_table)
+        )
         self.checkResults(cursor, data)
 
     def checkResults(self, cursor, data):
@@ -51,7 +57,7 @@ class TypeMixin(db.TemporaryTable):
 
     def create_sql(self, *args, **kwargs):
         table_sql = super(TypeMixin, self).create_sql(*args, **kwargs)
-        return ";".join(filter(None, [self.extra_sql, table_sql]))
+        return psycopg2.sql.SQL(";").join(filter(None, [self.extra_sql, table_sql]))
 
     expected = cast
 
@@ -149,10 +155,22 @@ class TestVarchar(TypeMixin):
     datatypes = ["varchar(12)", "varchar"]
 
     data = [
-        (b"", b""),
-        (b"one", b"one"),
-        (b"one two four", b"one two four"),
-        (b"one two three", b"one two three"),
+        (
+            b"",
+            b"",
+        ),
+        (
+            b"one",
+            b"one",
+        ),
+        (
+            b"one two four",
+            b"one two four",
+        ),
+        (
+            b"one two three",
+            b"one two three",
+        ),
     ]
 
     def cast(self, v):

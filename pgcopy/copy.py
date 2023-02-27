@@ -11,6 +11,7 @@ try:
 except ImportError:
     pass
 
+import psycopg2.sql
 from psycopg2.extensions import encodings
 
 from . import errors, inspect, util
@@ -30,7 +31,7 @@ def simple_formatter(fmt):
 
 def str_formatter(val):
     size = len(val)
-    return ("i%ss" % size, (size, val))
+    return "i{}s".format(size), (size, val)
 
 
 psql_epoch = 946684800
@@ -71,7 +72,7 @@ def numeric(n):
     try:
         nt = n.as_tuple()
     except AttributeError:
-        raise TypeError("numeric field requires Decimal value (got %r)" % n)
+        raise TypeError("numeric field requires Decimal value (got {!r})".format(n))
     digits = []
     if isinstance(nt.exponent, str):
         # NaN, Inf, -Inf
@@ -95,7 +96,7 @@ def numeric(n):
         sign = nt.sign * 0x4000
         dscale = -min(0, nt.exponent)
     data = [ndigits, weight, sign, dscale] + digits
-    return ("ihhHH%dH" % ndigits, [2 * len(data)] + data)
+    return ("ihhHH{:d}H".format(ndigits), [2 * len(data)] + data)
 
 
 def ndig(a):
@@ -108,7 +109,7 @@ def ndig(a):
 def jsonb_formatter(val):
     size = len(val)
     # first char must me binary format of jsonb in postgresql
-    return "ib%is" % size, (size + 1, 1, val)
+    return "ib{:d}s".format(size), (size + 1, 1, val)
 
 
 def uuid_formatter(guid):
@@ -272,8 +273,8 @@ class CopyManager(object):
         for column in self.cols:
             att = type_dict.get(column)
             if att is None:
-                message = '"%s" is not a column of table "%s"."%s"'
-                raise ValueError(message % (column, self.schema, self.table))
+                message = "{} is not a column of table {}.{}"
+                raise ValueError(message.format(column, self.schema, self.table))
             funcs = [encode, maxsize, array, diagnostic, null]
             reducer = lambda f, mf: mf(att, encoding, f)
             f = functools.reduce(reducer, funcs, get_formatter(att))
@@ -342,13 +343,22 @@ class CopyManager(object):
         datastream.write(BINCOPY_TRAILER)
 
     def copystream(self, datastream):
-        columns = '", "'.join(self.cols)
-        cmd = 'COPY "{0}"."{1}" ("{2}") FROM STDIN WITH BINARY'
-        sql = cmd.format(self.schema, self.table, columns)
         cursor = self.conn.cursor()
+        table_name = psycopg2.sql.Identifier(
+            *(self.schema, self.table) if self.schema else (self.table,)
+        )
+        columns = psycopg2.sql.SQL(", ").join(
+            map(
+                psycopg2.sql.Identifier,
+                self.cols,
+            )
+        )
+        cmd = psycopg2.sql.SQL("COPY {} ({}) FROM STDIN WITH BINARY").format(
+            table_name, columns
+        )
         try:
-            cursor.copy_expert(sql, datastream)
+            cursor.copy_expert(cmd, datastream)
         except Exception as e:
-            templ = "error doing binary copy into {0}.{1}:\n{2}"
-            e.message = templ.format(self.schema, self.table, e)
+            templ = "error doing binary copy into {table_name}:\n{e}"
+            e.message = templ.format(table_name=table_name, e=e)
             raise e
