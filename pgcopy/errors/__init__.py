@@ -6,6 +6,6 @@ Python 3 "fixes" this pain by introducing new syntax!
 import sys
 
 if sys.version_info[0] == 2:
-    pass
+    from .py2 import raise_from
 else:
-    pass
+    from .py3 import raise_from
