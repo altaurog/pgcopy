@@ -1,5 +1,8 @@
 Changelog
 -----------
+
+* Exceptions raised from `threading_copy`
+
 1.5.0
 """""
 12 Jan, 2021

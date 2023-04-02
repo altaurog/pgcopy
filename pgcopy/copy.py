@@ -3,7 +3,6 @@ import functools
 import os
 import struct
 import tempfile
-import threading
 from datetime import date, datetime
 
 try:
@@ -14,6 +13,7 @@ except ImportError:
 from psycopg2.extensions import encodings
 
 from . import errors, inspect, util
+from .thread import RaisingThread
 
 __all__ = ["CopyManager"]
 
@@ -322,7 +322,7 @@ class CopyManager(object):
         r_fd, w_fd = os.pipe()
         rstream = os.fdopen(r_fd, "rb")
         wstream = os.fdopen(w_fd, "wb")
-        copy_thread = threading.Thread(target=self.copystream, args=(rstream,))
+        copy_thread = RaisingThread(target=self.copystream, args=(rstream,))
         copy_thread.start()
         self.writestream(data, wstream)
         wstream.close()
