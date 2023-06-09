@@ -42,7 +42,7 @@ Quickstart
     from datetime import datetime
     from pgcopy import CopyManager
     import psycopg2
-    cols = ('id', 'timestamp', 'location', 'temperature')
+    cols = ['id', 'timestamp', 'location', 'temperature']
     now = datetime.now()
     records = [
             (0, now, 'Jerusalem', 72.2),
