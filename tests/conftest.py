@@ -19,6 +19,7 @@ connection_params = {
 @pytest.fixture(scope="session")
 def db():
     drop = create_db()
+    load_extensions()
     yield
     if drop:
         try:
@@ -60,6 +61,15 @@ def create_db():
                 raise RuntimeError(message)
             else:
                 return True
+
+
+def load_extensions():
+    conn = connect()
+    cur = conn.cursor()
+    try:
+        cur.execute("CREATE EXTENSION vector")
+    except psycopg2.errors.DuplicateObject:
+        pass
 
 
 def drop_db():

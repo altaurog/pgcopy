@@ -293,3 +293,13 @@ class TestEnum(TypeMixin):
     extra_sql = "CREATE TYPE test_enum AS ENUM ('one', 'two', 'three')"
     datatypes = ["test_enum"]
     data = [("one",), ("two",), ("three",)]
+
+
+class TestVector(TypeMixin):
+    datatypes = ["vector"]
+    data = [
+        ((-1.5, 0, 2.3),),
+    ]
+
+    def cast(self, v):
+        return tuple(json.loads(v))
