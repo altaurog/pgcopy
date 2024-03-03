@@ -30,10 +30,16 @@ class TypeMixin(db.TemporaryTable):
     null = "NOT NULL"
     record_count = 3
     extra_sql = None
+    extension_types = ["vector"]
 
     def test_type(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
-        bincopy.copy(data)
+        try:
+            bincopy.copy(data)
+        except psycopg2.errors.UndefinedFile:
+            if any(t in self.extension_types for t in self.datatypes):
+                pytest.skip("Unsupported datatype")
+            raise
         select_list = ",".join(self.cols)
         cursor.execute("SELECT %s from %s" % (select_list, schema_table))
         self.checkResults(cursor, data)
@@ -293,3 +299,13 @@ class TestEnum(TypeMixin):
     extra_sql = "CREATE TYPE test_enum AS ENUM ('one', 'two', 'three')"
     datatypes = ["test_enum"]
     data = [("one",), ("two",), ("three",)]
+
+
+class TestVector(TypeMixin):
+    datatypes = ["vector"]
+    data = [
+        ((-1.5, 0, 2.3),),
+    ]
+
+    def cast(self, v):
+        return tuple(json.loads(v))

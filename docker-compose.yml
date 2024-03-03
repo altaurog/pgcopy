@@ -15,7 +15,7 @@ services:
       - pgsql
 
   pgsql:
-    image: postgres:12
+    image: pgvector/pgvector:pg12
     environment:
       - POSTGRES_DB=pgcopy_test
       - POSTGRES_USER=postgres

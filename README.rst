@@ -83,6 +83,7 @@ pgcopy supports the following PostgreSQL scalar types:
 * jsonb
 * uuid
 * arrays
+* vector
 
 Documentation
 --------------
