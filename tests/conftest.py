@@ -68,7 +68,7 @@ def load_extensions():
     cur = conn.cursor()
     try:
         cur.execute("CREATE EXTENSION vector")
-    except psycopg2.errors.DuplicateObject:
+    except:
         pass
 
 
