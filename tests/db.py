@@ -1,6 +1,6 @@
 import hashlib
 from datetime import date, datetime, time, timedelta
-from random import randint, uniform
+from random import randint
 
 from pgcopy import util
 
@@ -14,7 +14,6 @@ gentime = lambda i: time(
 gendatetime = lambda i: datetime(1970, 1, 1) + timedelta(hours=i)
 gendatetimetz = lambda i: util.to_utc(datetime(1970, 1, 1) + timedelta(hours=i))
 genstr12 = lambda i: hashlib.md5(str(i).encode()).hexdigest()[: 12 - (i % 3)].encode()
-genvector = lambda i: [uniform(-i, i)]
 
 datagen = {
     "bool": genbool,
@@ -29,7 +28,6 @@ datagen = {
     "timestamp with time zone": gendatetimetz,
     "varchar(12)": genstr12,
     "char(12)": genstr12,
-    "vector": genvector,
 }
 
 colname = lambda i: chr(ord("a") + i)
