@@ -37,6 +37,7 @@ class TemporaryTable(object):
     tempschema = True
     null = "NOT NULL"
     data = None
+    extensions = []
     record_count = 0
 
     def setup_method(self):

@@ -19,7 +19,6 @@ connection_params = {
 @pytest.fixture(scope="session")
 def db():
     drop = create_db()
-    load_extensions()
     yield
     if drop:
         try:
@@ -63,15 +62,6 @@ def create_db():
                 return True
 
 
-def load_extensions():
-    conn = connect()
-    cur = conn.cursor()
-    try:
-        cur.execute("CREATE EXTENSION vector")
-    except:
-        pass
-
-
 def drop_db():
     "Drop test db"
     master = connect(dbname="postgres")
@@ -88,16 +78,22 @@ def conn(request, db):
     conn = connect()
     conn.autocommit = False
     conn.set_client_encoding(getattr(request, "param", "UTF8"))
-    cur = conn.cursor()
     inst = request.instance
     if isinstance(inst, TemporaryTable):
+        for extension in inst.extensions:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("CREATE EXTENSION {}".format(extension))
+                conn.commit()
+            except:
+                conn.rollback()
         try:
-            cur.execute(inst.create_sql(inst.tempschema))
+            with conn.cursor() as cur:
+                cur.execute(inst.create_sql(inst.tempschema))
         except psycopg2.ProgrammingError as e:
             conn.rollback()
             if "42704" == e.pgcode:
                 pytest.skip("Unsupported datatype")
-    cur.close()
     yield conn
     conn.rollback()
     conn.close()
