@@ -1,5 +1,13 @@
 Changelog
 -----------
+1.6.0
+"""""
+14 Mar, 2024
+
+* Ability to extend CopyManager type support by subclassing
+* Add support for ``vector`` datatype (thanks William Burklund)
+* Remove official support for Python 2
+
 1.5.0
 """""
 12 Jan, 2021

@@ -57,4 +57,5 @@ PostgreSQL numeric does not support ``Decimal('Inf')`` or
 
 Vector
 *******
-From `pgvector <https://github.com/pgvector/pgvector>`_.
+Support for ``vector`` type from `pgvector <https://github.com/pgvector/pgvector>`_ is
+available in ``pgcopy.contrib.vector``.

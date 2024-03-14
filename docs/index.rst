@@ -9,6 +9,7 @@
    installation
    use
    datatypes
+   extending
    replace
    benchmarks
    testing

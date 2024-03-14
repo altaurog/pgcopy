@@ -15,5 +15,11 @@ ubiquitous docker::
 
     $ docker-compose up pgcopy
 
+.. note::
+
+    Tests for extension types will be skipped if the extension is not
+   available.
+
+
 .. _pytest: https://pypi.org/project/pytest/
 .. _Tox: https://tox.readthedocs.io/en/latest/
