@@ -36,7 +36,7 @@ setup(
     author_email="python@aryehleib.com",
     license="MIT",
     url="https://pgcopy.readthedocs.io/en/latest/",
-    packages=["pgcopy", "pgcopy.errors"],
+    packages=["pgcopy", "pgcopy.errors", "pgcopy.contrib"],
     install_requires=["psycopg2", "pytz"],
     classifiers=[
         "Programming Language :: Python :: 2",

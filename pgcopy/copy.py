@@ -115,19 +115,6 @@ def uuid_formatter(guid):
     return "i2Q", (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
 
 
-def vector_formatter(val):
-    info = util.array_info(val)
-    ndim, lengths = info[0], info[1:]
-    if ndim != 1:
-        raise ValueError("{} is not a 1D array type".format(val))
-
-    # https://github.com/pgvector/pgvector/blob/587e9ba97c1cb057117bc9b081c0170b5013f8d8/src/vector.c#L402-L419
-    fmt = ">hh" + "f" * lengths[0]
-    data = [lengths[0], 0, *val]
-
-    return str_formatter(struct.pack(fmt, *data))
-
-
 type_formatters = {
     "bool": simple_formatter("?"),
     "int2": simple_formatter("h"),
@@ -147,7 +134,6 @@ type_formatters = {
     "timestamptz": timestamp,
     "numeric": numeric,
     "uuid": uuid_formatter,
-    "vector": vector_formatter,
 }
 
 
@@ -243,15 +229,6 @@ def diagnostic(att, encoding, formatter):
     return f
 
 
-def get_formatter(att):
-    if att.type_category == "E":
-        return str_formatter
-    try:
-        return type_formatters[att.type_name]
-    except KeyError:
-        raise TypeError("type {} is not supported".format(att.type_name))
-
-
 class CopyManager(object):
     """
     Facility for bulk-loading data using binary copy.
@@ -270,7 +247,13 @@ class CopyManager(object):
     :raises ValueError: if the table or columns do not exist.
     """
 
+    type_formatters = {}
+
     def __init__(self, conn, table, cols):
+        self._type_formatters = {
+            **type_formatters,
+            **self.type_formatters,
+        }
         self.conn = conn
         if "." in table:
             self.schema, self.table = table.split(".", 1)
@@ -290,8 +273,16 @@ class CopyManager(object):
                 raise ValueError(message % (column, self.schema, self.table))
             funcs = [encode, maxsize, array, diagnostic, null]
             reducer = lambda f, mf: mf(att, encoding, f)
-            f = functools.reduce(reducer, funcs, get_formatter(att))
+            f = functools.reduce(reducer, funcs, self.get_formatter(att))
             self.formatters.append(f)
+
+    def get_formatter(self, att):
+        if att.type_category == "E":
+            return str_formatter
+        try:
+            return self._type_formatters[att.type_name]
+        except KeyError:
+            raise TypeError("type {} is not supported".format(att.type_name))
 
     def copy(self, data, fobject_factory=tempfile.TemporaryFile):
         """

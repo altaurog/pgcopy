@@ -12,7 +12,6 @@ if sys.version_info < (3,):
     memoryview = buffer
 
 import psycopg2.extensions
-
 from pgcopy import CopyManager, util
 
 from . import db
@@ -30,10 +29,11 @@ class TypeMixin(db.TemporaryTable):
     null = "NOT NULL"
     record_count = 3
     extra_sql = None
-    extension_types = ["vector"]
+    extension_types = []
+    copy_manager_class = CopyManager
 
     def test_type(self, conn, cursor, schema_table, data):
-        bincopy = CopyManager(conn, schema_table, self.cols)
+        bincopy = self.copy_manager_class(conn, schema_table, self.cols)
         try:
             bincopy.copy(data)
         except psycopg2.errors.UndefinedFile:
@@ -299,13 +299,3 @@ class TestEnum(TypeMixin):
     extra_sql = "CREATE TYPE test_enum AS ENUM ('one', 'two', 'three')"
     datatypes = ["test_enum"]
     data = [("one",), ("two",), ("three",)]
-
-
-class TestVector(TypeMixin):
-    datatypes = ["vector"]
-    data = [
-        ((-1.5, 0, 2.3),),
-    ]
-
-    def cast(self, v):
-        return tuple(json.loads(v))
