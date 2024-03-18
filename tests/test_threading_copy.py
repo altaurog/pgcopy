@@ -24,14 +24,9 @@ class TestThreadingCopy(test_datatypes.TypeMixin):
         with pytest.raises(BadCopyFileFormat):
             mgr.threading_copy(data)
 
-    @staticmethod
-    def gen_data(data):
-        for item in data:
-            yield item
-
     def test_threading_copy_generator(self, conn, cursor, data):
         mgr = CopyManager(conn, self.table, self.cols)
-        mgr.threading_copy(self.gen_data(data))
+        mgr.threading_copy(iter(data))
         select_list = ",".join(self.cols)
         cursor.execute("SELECT %s from %s" % (select_list, self.table))
         self.checkResults(cursor, data)
@@ -39,7 +34,7 @@ class TestThreadingCopy(test_datatypes.TypeMixin):
     def test_threading_copy_empty_generator(self, conn, cursor):
         data = []
         mgr = CopyManager(conn, self.table, self.cols)
-        mgr.threading_copy(self.gen_data(data))
+        mgr.threading_copy(iter(data))
         select_list = ",".join(self.cols)
         cursor.execute("SELECT %s from %s" % (select_list, self.table))
         self.checkResults(cursor, data)
