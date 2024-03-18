@@ -6,6 +6,7 @@ Changelog
 
 * Ability to extend CopyManager type support by subclassing
 * Add support for ``vector`` datatype (thanks William Burklund)
+* Raise exceptions from :py:meth:`pgcopy.CopyManager.threading_copy`
 * Remove official support for Python 2
 
 1.5.0
