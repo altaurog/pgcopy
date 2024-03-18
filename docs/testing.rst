@@ -18,7 +18,7 @@ ubiquitous docker::
 .. note::
 
     Tests for extension types will be skipped if the extension is not
-   available.
+    available.
 
 
 .. _pytest: https://pypi.org/project/pytest/

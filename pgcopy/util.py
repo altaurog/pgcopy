@@ -82,7 +82,8 @@ class Replace(object):
     :param connection: database connection
     :type connection: psycopg2 connection
 
-    :param table: the table name.  Schema may be specified using dot notation: ``schema.table``.
+    :param table: the table name.  Schema may be specified using dot
+        notation: ``schema.table``.  Mixed-case names are not supported.
     :type table: str
 
     On entry, it creates a new table like the original, with a

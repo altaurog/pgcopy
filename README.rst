@@ -29,6 +29,7 @@ Features
 * Support for many data types
 * Support for multi-dimensional array types
 * Support for schema and schema search path
+* Support for mixed-case table and column names
 * Transparent string encoding
 * Utility for replacing entire table
 

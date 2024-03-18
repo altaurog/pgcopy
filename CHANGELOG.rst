@@ -6,6 +6,7 @@ Changelog
 
 * Ability to extend CopyManager type support by subclassing
 * Add support for ``vector`` datatype (thanks William Burklund)
+* Add support for mixed-case table and column names
 * Raise exceptions from :py:meth:`pgcopy.CopyManager.threading_copy`
 * Remove official support for Python 2
 
