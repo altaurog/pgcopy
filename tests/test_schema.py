@@ -10,8 +10,7 @@ class TestPublicSchema(test_datatypes.TypeMixin):
     def test_default_public(self, conn, cursor, data):
         bincopy = CopyManager(conn, self.table, self.cols)
         bincopy.copy(data)
-        select_list = ",".join(self.cols)
-        cursor.execute("SELECT %s from public.%s" % (select_list, self.table))
+        cursor.execute('SELECT %s from public."%s"' % (self.select_list, self.table))
         self.checkResults(cursor, data)
 
     def cast(self, v):
@@ -27,8 +26,7 @@ class TestCopyFallbackSchema(test_datatypes.TypeMixin):
         cursor.execute("SET search_path TO {}".format(schema))
         bincopy = CopyManager(conn, self.table, self.cols)
         bincopy.copy(data)
-        select_list = ",".join(self.cols)
-        cursor.execute("SELECT %s from %s" % (select_list, self.table))
+        cursor.execute('SELECT %s from "%s"' % (self.select_list, self.table))
         self.checkResults(cursor, data)
 
     def cast(self, v):

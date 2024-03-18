@@ -41,7 +41,8 @@ class TypeMixin(db.TemporaryTable):
                 pytest.skip("Unsupported datatype")
             raise
         select_list = ",".join(self.cols)
-        cursor.execute("SELECT %s from %s" % (select_list, schema_table))
+        schema, table = schema_table.split(".")
+        cursor.execute('SELECT %s from "%s"."%s"' % (self.select_list, schema, table))
         self.checkResults(cursor, data)
 
     def checkResults(self, cursor, data):

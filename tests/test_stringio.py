@@ -11,8 +11,8 @@ class Test(TypeMixin):
     def test_copy(self, conn, cursor, schema_table, data):
         bincopy = CopyManager(conn, schema_table, self.cols)
         bincopy.copy(data, BytesIO)
-        select_list = ",".join(self.cols)
-        cursor.execute("SELECT %s from %s" % (select_list, schema_table))
+        schema, table = schema_table.split(".")
+        cursor.execute('SELECT %s from "%s"."%s"' % (self.select_list, schema, table))
         self.checkResults(cursor, data)
 
     def cast(self, v):
