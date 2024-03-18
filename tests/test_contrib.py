@@ -8,7 +8,6 @@ from .test_datatypes import TypeMixin
 class TestVector(TypeMixin):
     copy_manager_class = pgcopy.contrib.vector.CopyManager
     extensions = ["vector"]
-    extension_types = ["vector"]
     datatypes = ["vector"]
     data = [
         ((-1.5, 0, 2.3),),

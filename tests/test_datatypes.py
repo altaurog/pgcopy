@@ -29,17 +29,11 @@ class TypeMixin(db.TemporaryTable):
     null = "NOT NULL"
     record_count = 3
     extra_sql = None
-    extension_types = []
     copy_manager_class = CopyManager
 
     def test_type(self, conn, cursor, schema_table, data):
         bincopy = self.copy_manager_class(conn, schema_table, self.cols)
-        try:
-            bincopy.copy(data)
-        except psycopg2.errors.UndefinedFile:
-            if any(t in self.extension_types for t in self.datatypes):
-                pytest.skip("Unsupported datatype")
-            raise
+        bincopy.copy(data)
         select_list = ",".join(self.cols)
         schema, table = schema_table.split(".")
         cursor.execute('SELECT %s from "%s"."%s"' % (self.select_list, schema, table))
