@@ -1,8 +1,6 @@
 import pytest
-
-from psycopg2.errors import BadCopyFileFormat
-
 from pgcopy import CopyManager
+from psycopg2.errors import BadCopyFileFormat
 
 from . import test_datatypes
 
@@ -45,5 +43,3 @@ class TestThreadingCopy(test_datatypes.TypeMixin):
         select_list = ",".join(self.cols)
         cursor.execute("SELECT %s from %s" % (select_list, self.table))
         self.checkResults(cursor, data)
-
-
