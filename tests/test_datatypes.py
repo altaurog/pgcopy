@@ -35,9 +35,12 @@ class TypeMixin(db.TemporaryTable):
         bincopy = self.copy_manager_class(conn, schema_table, self.cols)
         bincopy.copy(data)
         select_list = ",".join(self.cols)
-        schema, table = schema_table.split(".")
-        cursor.execute('SELECT %s from "%s"."%s"' % (self.select_list, schema, table))
+        cursor.execute(self.select_sql(schema_table))
         self.checkResults(cursor, data)
+
+    def select_sql(self, schema_table):
+        schema, table = schema_table.split(".")
+        return 'SELECT %s from "%s"."%s"' % (self.select_list, schema, table)
 
     def checkResults(self, cursor, data):
         for rec in data:

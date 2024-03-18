@@ -11,10 +11,11 @@ class TestThreadingCopy(test_datatypes.TypeMixin):
         "integer",
     ]
 
-    def test_threading_copy(self, conn, cursor, data):
+    def test_threading_copy(self, conn, cursor, schema_table, data):
         mgr = CopyManager(conn, self.table, self.cols)
         mgr.threading_copy(data)
-        cursor.execute('SELECT %s from "%s"' % (self.select_list, self.table))
+        select_list = ",".join(self.cols)
+        cursor.execute(self.select_sql(schema_table))
         self.checkResults(cursor, data)
 
     def test_threading_copy_error(self, conn, cursor):
@@ -23,15 +24,17 @@ class TestThreadingCopy(test_datatypes.TypeMixin):
         with pytest.raises(BadCopyFileFormat):
             mgr.threading_copy(data)
 
-    def test_threading_copy_generator(self, conn, cursor, data):
+    def test_threading_copy_generator(self, conn, cursor, schema_table, data):
         mgr = CopyManager(conn, self.table, self.cols)
         mgr.threading_copy(iter(data))
-        cursor.execute('SELECT %s from "%s"' % (self.select_list, self.table))
+        select_list = ",".join(self.cols)
+        cursor.execute(self.select_sql(schema_table))
         self.checkResults(cursor, data)
 
-    def test_threading_copy_empty_generator(self, conn, cursor):
+    def test_threading_copy_empty_generator(self, conn, cursor, schema_table):
         data = []
         mgr = CopyManager(conn, self.table, self.cols)
         mgr.threading_copy(iter(data))
-        cursor.execute('SELECT %s from "%s"' % (self.select_list, self.table))
+        select_list = ",".join(self.cols)
+        cursor.execute(self.select_sql(schema_table))
         self.checkResults(cursor, data)
