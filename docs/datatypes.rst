@@ -30,7 +30,7 @@ numeric                    decimal.Decimal   Numeric_
 json                       str, bytes        Encoding_
 jsonb                      bytes
 uuid                       uuid.UUID
-vector                     list[float]       Vector_
+vector_                    list[float]       Contrib_
 ========================== ================= =========================
 
 Arrays
@@ -55,7 +55,10 @@ Numeric
 PostgreSQL numeric does not support ``Decimal('Inf')`` or
 ``Decimal('-Inf')``.  pgcopy serializes these as ``NaN``.
 
-Vector
-*******
-Support for ``vector`` type from `pgvector <https://github.com/pgvector/pgvector>`_ is
-available in ``pgcopy.contrib.vector``.
+Contrib
+""""""""
+Support for ``vector`` type from pgvector_ is available in
+``contrib.vector.CopyManager``.
+
+.. _vector: https://github.com/pgvector/pgvector
+.. _pgvector: https://github.com/pgvector/pgvector
