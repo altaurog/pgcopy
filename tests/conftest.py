@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import psycopg2
@@ -7,9 +8,21 @@ from psycopg2.extras import LoggingConnection
 
 from .db import TemporaryTable
 
+
+def get_port():
+    # this would be much more straightforward if tox-docker would release
+    # recent updates https://github.com/tox-dev/tox-docker/pull/167
+    if os.getenv("TOX_ENV_NAME"):
+        search_pattern = re.compile(r"PG\w+_5432_TCP_PORT")
+        for name, val in os.environ.items():
+            if search_pattern.fullmatch(name):
+                return int(val)
+    return int(os.getenv("POSTGRES_PORT", "5432"))
+
+
 connection_params = {
     "dbname": os.getenv("POSTGRES_DB", "pgcopy_test"),
-    "port": int(os.getenv("POSTGRES_PORT", "5432")),
+    "port": get_port(),
     "host": os.getenv("POSTGRES_HOST"),
     "user": os.getenv("POSTGRES_USER"),
     "password": os.getenv("POSTGRES_PASSWORD"),
