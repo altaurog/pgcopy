@@ -3,8 +3,8 @@
 pgcopy
 =======
 
-.. image:: https://travis-ci.org/altaurog/pgcopy.svg?branch=master
-    :target: https://travis-ci.org/altaurog/pgcopy
+.. image:: https://github.com/altaurog/pgcopy/actions/workflows/test.yaml/badge.svg?branch=master
+    :target: https://github.com/altaurog/pgcopy/actions/workflows/test.yaml?query=branch%3Avector
 
 .. image:: https://coveralls.io/repos/github/altaurog/pgcopy/badge.svg?branch=master
     :target: https://coveralls.io/github/altaurog/pgcopy?branch=master
