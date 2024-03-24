@@ -107,6 +107,7 @@ def conn(request, db):
             conn.rollback()
             if "42704" == e.pgcode:
                 pytest.skip("Unsupported datatype")
+            raise
     yield conn
     conn.rollback()
     conn.close()
