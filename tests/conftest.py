@@ -103,11 +103,9 @@ def conn(request, db):
         try:
             with conn.cursor() as cur:
                 cur.execute(inst.create_sql(inst.tempschema))
-        except psycopg2.ProgrammingError as e:
+        except psycopg2.errors.UndefinedObject as e:
             conn.rollback()
-            if "42704" == e.pgcode:
-                pytest.skip("Unsupported datatype")
-            raise
+            pytest.skip("Unsupported datatype")
     yield conn
     conn.rollback()
     conn.close()
