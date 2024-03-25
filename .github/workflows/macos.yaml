@@ -1,0 +1,24 @@
+name: MacOS
+on:
+  push:
+    branches:
+      - macos-test
+
+jobs:
+  test:
+    name: MacOS
+    runs-on: macos-14
+    steps:
+      - name: os info
+        run: uname -a
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: python info
+        run: python3 --version
+      - name: setup postgresql
+        run: |
+          brew install postgresql
+      - name: postgresql info
+        run: |
+          psql --version
+          echo '\conninfo' | psql
