@@ -18,6 +18,7 @@ jobs:
       - name: setup postgresql
         run: |
           brew install postgresql
+          brew services start postgresql@14
       - name: postgresql info
         run: |
           psql --version
