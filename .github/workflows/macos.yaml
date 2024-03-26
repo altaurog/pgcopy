@@ -35,5 +35,5 @@ jobs:
       - name: install python deps
         run: pip3 install pytest psycopg2 pytz
       - name: run test
-        run: pytest tests/
+        run: pytest -rsfE tests/
 
