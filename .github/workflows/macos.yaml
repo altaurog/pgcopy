@@ -7,6 +7,9 @@ on:
 jobs:
   test:
     name: MacOS
+    strategy:
+      matrix:
+        pg: [12, 13, 14, 15, 16]
     runs-on: macos-14
     steps:
       - name: os info
@@ -17,8 +20,12 @@ jobs:
         run: python3 --version
       - name: setup postgresql
         run: |
-          brew install postgresql
-          brew services start postgresql@14
+          brew install postgresql@${{ matrix.pg }}
+          brew services start postgresql@${{ matrix.pg }}
+          echo PATH="/opt/homebrew/opt/postgresql@${{ matrix.pg }}/bin:$PATH" >> $GITHUB_ENV
+          echo LDFLAGS="-L/opt/homebrew/opt/postgresql@${{ matrix.pg }}/lib" >> $GITHUB_ENV
+          echo CPPFLAGS="-I/opt/homebrew/opt/postgresql@${{ matrix.pg }}/include" >> $GITHUB_ENV
+          echo PKG_CONFIG_PATH="/opt/homebrew/opt/postgresql@${{ matrix.pg }}/lib/pkgconfig" >> $GITHUB_ENV
       - name: postgresql info
         run: |
           psql --version
@@ -28,5 +35,5 @@ jobs:
       - name: install python deps
         run: pip3 install pytest psycopg2 pytz
       - name: run test
-        run: pytest tests/test_contrib.py
+        run: pytest tests/
 
