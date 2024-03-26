@@ -22,4 +22,4 @@ jobs:
       - name: postgresql info
         run: |
           psql --version
-          echo '\conninfo' | psql
+          echo '\conninfo' | psql postgres
