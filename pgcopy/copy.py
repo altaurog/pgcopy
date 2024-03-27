@@ -3,7 +3,6 @@ import functools
 import os
 import struct
 import tempfile
-import threading
 from datetime import date, datetime
 
 try:
@@ -14,6 +13,7 @@ except ImportError:
 from psycopg2.extensions import encodings
 
 from . import errors, inspect, util
+from .thread import RaisingThread
 
 __all__ = ["CopyManager"]
 
@@ -229,15 +229,6 @@ def diagnostic(att, encoding, formatter):
     return f
 
 
-def get_formatter(att):
-    if att.type_category == "E":
-        return str_formatter
-    try:
-        return type_formatters[att.type_name]
-    except KeyError:
-        raise TypeError("type {} is not supported".format(att.type_name))
-
-
 class CopyManager(object):
     """
     Facility for bulk-loading data using binary copy.
@@ -256,7 +247,13 @@ class CopyManager(object):
     :raises ValueError: if the table or columns do not exist.
     """
 
+    type_formatters = {}
+
     def __init__(self, conn, table, cols):
+        self._type_formatters = {
+            **type_formatters,
+            **self.type_formatters,
+        }
         self.conn = conn
         if "." in table:
             self.schema, self.table = table.split(".", 1)
@@ -276,8 +273,16 @@ class CopyManager(object):
                 raise ValueError(message % (column, self.schema, self.table))
             funcs = [encode, maxsize, array, diagnostic, null]
             reducer = lambda f, mf: mf(att, encoding, f)
-            f = functools.reduce(reducer, funcs, get_formatter(att))
+            f = functools.reduce(reducer, funcs, self.get_formatter(att))
             self.formatters.append(f)
+
+    def get_formatter(self, att):
+        if att.type_category == "E":
+            return str_formatter
+        try:
+            return self._type_formatters[att.type_name]
+        except KeyError:
+            raise TypeError("type {} is not supported".format(att.type_name))
 
     def copy(self, data, fobject_factory=tempfile.TemporaryFile):
         """
@@ -322,7 +327,7 @@ class CopyManager(object):
         r_fd, w_fd = os.pipe()
         rstream = os.fdopen(r_fd, "rb")
         wstream = os.fdopen(w_fd, "wb")
-        copy_thread = threading.Thread(target=self.copystream, args=(rstream,))
+        copy_thread = RaisingThread(target=self.copystream, args=(rstream,))
         copy_thread.start()
         self.writestream(data, wstream)
         wstream.close()

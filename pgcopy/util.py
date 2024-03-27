@@ -3,6 +3,7 @@ import re
 import string
 from datetime import datetime, time
 
+from psycopg2 import sql
 from pytz import UTC
 
 
@@ -33,13 +34,14 @@ def array_iter(arr):
 
 def get_schema(conn, table):
     cur = conn.cursor()
+    quoted_table = sql.Identifier(table).as_string(cur)
     query = """
         SELECT n.nspname, c.relname
         FROM pg_catalog.pg_class c
         JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
         WHERE c.oid = %s::regclass
         """
-    cur.execute(query, (table,))
+    cur.execute(query, (quoted_table,))
     return cur.fetchone()[0]
 
 
@@ -80,7 +82,8 @@ class Replace(object):
     :param connection: database connection
     :type connection: psycopg2 connection
 
-    :param table: the table name.  Schema may be specified using dot notation: ``schema.table``.
+    :param table: the table name.  Schema may be specified using dot
+        notation: ``schema.table``.  Mixed-case names are not supported.
     :type table: str
 
     On entry, it creates a new table like the original, with a

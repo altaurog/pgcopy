@@ -1,4 +1,4 @@
-FROM python:3.8-slim-buster
+FROM python:3.10-slim-buster
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -13,9 +13,10 @@ RUN \
         python3-pip \
         python3-setuptools
 
+RUN pip3 install pytest==8.1.1
 COPY ./ /opt/install
 WORKDIR /opt/install
-RUN pip3 install . pytest==4.6.4
+RUN pip3 install .
 RUN tar c tests/*.py | tar x -C /opt
 
 WORKDIR /opt

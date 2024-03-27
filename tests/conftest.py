@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import psycopg2
@@ -7,9 +8,21 @@ from psycopg2.extras import LoggingConnection
 
 from .db import TemporaryTable
 
+
+def get_port():
+    # this would be much more straightforward if tox-docker would release
+    # recent updates https://github.com/tox-dev/tox-docker/pull/167
+    if os.getenv("TOX_ENV_NAME"):
+        search_pattern = re.compile(r"PG\w+_5432_TCP_PORT")
+        for name, val in os.environ.items():
+            if search_pattern.fullmatch(name):
+                return int(val)
+    return int(os.getenv("POSTGRES_PORT", "5432"))
+
+
 connection_params = {
     "dbname": os.getenv("POSTGRES_DB", "pgcopy_test"),
-    "port": int(os.getenv("POSTGRES_PORT", "5432")),
+    "port": get_port(),
     "host": os.getenv("POSTGRES_HOST"),
     "user": os.getenv("POSTGRES_USER"),
     "password": os.getenv("POSTGRES_PASSWORD"),
@@ -78,16 +91,25 @@ def conn(request, db):
     conn = connect()
     conn.autocommit = False
     conn.set_client_encoding(getattr(request, "param", "UTF8"))
-    cur = conn.cursor()
     inst = request.instance
     if isinstance(inst, TemporaryTable):
+        for extension in inst.extensions:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("CREATE EXTENSION {}".format(extension))
+                conn.commit()
+            except (
+                psycopg2.errors.DuplicateObject,
+                psycopg2.errors.UndefinedFile,  # postgres <= 14
+                psycopg2.errors.FeatureNotSupported,  # postgres >= 15
+            ):
+                conn.rollback()
         try:
-            cur.execute(inst.create_sql(inst.tempschema))
-        except psycopg2.ProgrammingError as e:
+            with conn.cursor() as cur:
+                cur.execute(inst.create_sql(inst.tempschema))
+        except psycopg2.errors.UndefinedObject as e:
             conn.rollback()
-            if "42704" == e.pgcode:
-                pytest.skip("Unsupported datatype")
-    cur.close()
+            pytest.skip("Unsupported datatype")
     yield conn
     conn.rollback()
     conn.close()

@@ -3,8 +3,8 @@
 pgcopy
 =======
 
-.. image:: https://travis-ci.org/altaurog/pgcopy.svg?branch=master
-    :target: https://travis-ci.org/altaurog/pgcopy
+.. image:: https://github.com/altaurog/pgcopy/actions/workflows/test.yaml/badge.svg?branch=master
+    :target: https://github.com/altaurog/pgcopy/actions/workflows/test.yaml?query=branch%3Avector
 
 .. image:: https://coveralls.io/repos/github/altaurog/pgcopy/badge.svg?branch=master
     :target: https://coveralls.io/github/altaurog/pgcopy?branch=master
@@ -29,6 +29,7 @@ Features
 * Support for many data types
 * Support for multi-dimensional array types
 * Support for schema and schema search path
+* Support for mixed-case table and column names
 * Transparent string encoding
 * Utility for replacing entire table
 
@@ -83,6 +84,7 @@ pgcopy supports the following PostgreSQL scalar types:
 * jsonb
 * uuid
 * arrays
+* vector
 
 Documentation
 --------------

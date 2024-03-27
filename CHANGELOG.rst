@@ -1,5 +1,16 @@
 Changelog
 -----------
+1.6.0
+"""""
+14 Mar, 2024
+
+* Ability to extend CopyManager type support by subclassing
+* Add support for `vector <https://github.com/pgvector/pgvector>`_ datatype
+  (thanks William Burklund)
+* Add support for mixed-case table and column names
+* Raise exceptions from :py:meth:`pgcopy.CopyManager.threading_copy`
+* Remove official support for Python 2
+
 1.5.0
 """""
 12 Jan, 2021

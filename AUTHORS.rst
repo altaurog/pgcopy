@@ -9,3 +9,4 @@ with contributions from
 * John A. Bachman `@johnbachman <https://github.com/johnbachman>`_
 * Akshaye Shenoi `@akshayeshenoi <https://github.com/akshayeshenoi>`_
 * Nathan Glover `@nathanglover <https://github.com/nathanglover>`_
+* William Burklund `@wburklund <https://github.com/wburklund>`_
