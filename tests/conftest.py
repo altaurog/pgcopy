@@ -98,7 +98,11 @@ def conn(request, db):
                 with conn.cursor() as cur:
                     cur.execute("CREATE EXTENSION {}".format(extension))
                 conn.commit()
-            except:
+            except (
+                psycopg2.errors.DuplicateObject,
+                psycopg2.errors.UndefinedFile,  # postgres <= 14
+                psycopg2.errors.FeatureNotSupported,  # postgres >= 15
+            ):
                 conn.rollback()
         try:
             with conn.cursor() as cur:
