@@ -2,34 +2,37 @@ name: MacOS
 on:
   push:
     branches:
-      - macos-test
+      - master
+  pull_request:
+    branches: ["*"]
 
 jobs:
   test:
     name: MacOS
     strategy:
       matrix:
-        pg: [12, 13, 14, 15, 16]
+        pg:
+          - postgresql@12
+          - postgresql@13
+          - postgresql@14
+          - postgresql@15
+          - postgresql@16
     runs-on: macos-14
     steps:
       - name: os info
         run: uname -a
       - name: checkout
         uses: actions/checkout@v4
-      - name: python info
-        run: python3 --version
       - name: setup postgresql
         run: |
-          brew install postgresql@${{ matrix.pg }}
-          brew services start postgresql@${{ matrix.pg }}
-          echo PATH="/opt/homebrew/opt/postgresql@${{ matrix.pg }}/bin:$PATH" >> $GITHUB_ENV
-          echo LDFLAGS="-L/opt/homebrew/opt/postgresql@${{ matrix.pg }}/lib" >> $GITHUB_ENV
-          echo CPPFLAGS="-I/opt/homebrew/opt/postgresql@${{ matrix.pg }}/include" >> $GITHUB_ENV
-          echo PKG_CONFIG_PATH="/opt/homebrew/opt/postgresql@${{ matrix.pg }}/lib/pkgconfig" >> $GITHUB_ENV
-      - name: postgresql info
+          brew install ${{ matrix.pg }}
+          brew services start ${{ matrix.pg }}
+          echo PATH="/opt/homebrew/opt/${{ matrix.pg }}/bin:$PATH" >> $GITHUB_ENV
+          echo LDFLAGS="-L/opt/homebrew/opt/${{ matrix.pg }}/lib" >> $GITHUB_ENV
+          echo CPPFLAGS="-I/opt/homebrew/opt/${{ matrix.pg }}/include" >> $GITHUB_ENV
+          echo PKG_CONFIG_PATH="/opt/homebrew/opt/${{ matrix.pg }}/lib/pkgconfig" >> $GITHUB_ENV
+      - name: prepare postgresql connection info
         run: |
-          psql --version
-          echo '\conninfo' | psql postgres
           echo POSTGRES_DB=postgres >> $GITHUB_ENV
           echo POSTGRES_USER=runner >> $GITHUB_ENV
       - name: install python deps
