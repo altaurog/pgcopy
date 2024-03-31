@@ -17,7 +17,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
       - name: install python deps
@@ -35,7 +35,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
       - name: install python deps
@@ -53,7 +53,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
       - name: install python deps
@@ -68,7 +68,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
       - name: install python deps
