@@ -35,8 +35,10 @@ jobs:
         run: |
           echo POSTGRES_DB=postgres >> $GITHUB_ENV
           echo POSTGRES_USER=runner >> $GITHUB_ENV
+      - name: setup virtualenv
+        run: python3 -m venv .venv
       - name: install python deps
-        run: pip3 install pytest psycopg2 pytz
+        run: .venv/bin/pip3 install pytest psycopg2 pytz
       - name: run test
-        run: pytest -rsfE tests/
+        run: .venv/bin/python3 -m pytest -rsfE tests/
 
