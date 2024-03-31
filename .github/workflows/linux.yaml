@@ -61,7 +61,7 @@ jobs:
       - name: run tests
         run: tox -e ${{ matrix.pg }}
 
-  psycopg2.8:
+  psycopg28:
     name: psycopg2.8
     runs-on: ubuntu-latest
     steps:
@@ -74,4 +74,4 @@ jobs:
       - name: install python deps
         run: pip3 install tox tox-docker
       - name: run tests
-        run: tox -e psycopg2.8
+        run: tox -e psycopg28
