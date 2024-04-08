@@ -2,7 +2,7 @@ Changelog
 -----------
 1.6.0
 """""
-14 Mar, 2024
+8 Apr, 2024
 
 * Ability to extend CopyManager type support by subclassing
 * Add support for `vector <https://github.com/pgvector/pgvector>`_ datatype
