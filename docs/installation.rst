@@ -15,10 +15,7 @@ Due to technical problems with binary distributions, `psycopg2 versions
 installation in some situations, as it requires the dev tools to build psycopg2.
 
 If you do not want to build psycopg2 for each installation, the recommended
-options are:
-
-* install psycopg2 version 2.7.X before installing pgcopy
-* create a psycopg2 wheel for distribution to production machines
+approach is to create a psycopg2 wheel for distribution to production machines
 
 Compatibility
 """""""""""""
