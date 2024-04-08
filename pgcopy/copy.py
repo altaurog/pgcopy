@@ -242,7 +242,7 @@ class CopyManager(object):
     :type table: str
 
     :param cols: columns in the table into which to copy data
-    :type cols: list of str
+    :type cols: iterable of str
 
     :raises ValueError: if the table or columns do not exist.
     """
