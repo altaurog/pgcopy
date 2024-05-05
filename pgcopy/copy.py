@@ -309,11 +309,13 @@ class CopyManager(object):
         ``ValueError`` is raised if a null value is provided for a column
         with non-null constraint.
         """
-        datastream = fobject_factory()
-        self.writestream(data, datastream)
-        datastream.seek(0)
-        self.copystream(datastream)
-        datastream.close()
+        try:
+            with self.backend.copy(self.sql(), fobject_factory) as datastream:
+                self.writestream(data, datastream)
+        except Exception as e:
+            templ = "error doing binary copy into {0}.{1}:\n{2}"
+            e.message = templ.format(self.schema, self.table, e)
+            raise e
 
     def threading_copy(self, data):
         """
@@ -322,14 +324,18 @@ class CopyManager(object):
         :param data: the data to be inserted
         :type data: iterable of iterables
         """
-        r_fd, w_fd = os.pipe()
-        rstream = os.fdopen(r_fd, "rb")
-        wstream = os.fdopen(w_fd, "wb")
-        copy_thread = RaisingThread(target=self.copystream, args=(rstream,))
-        copy_thread.start()
-        self.writestream(data, wstream)
-        wstream.close()
-        copy_thread.join()
+        try:
+            with self.backend.threading_copy(self.sql()) as datastream:
+                self.writestream(data, datastream)
+        except Exception as e:
+            templ = "error doing binary copy into {0}.{1}:\n{2}"
+            e.message = templ.format(self.schema, self.table, e)
+            raise e
+
+    def sql(self):
+        columns = '", "'.join(self.cols)
+        cmd = 'COPY "{0}"."{1}" ("{2}") FROM STDIN WITH BINARY'
+        return cmd.format(self.schema, self.table, columns)
 
     def writestream(self, data, datastream):
         datastream.write(BINCOPY_HEADER)
@@ -343,14 +349,3 @@ class CopyManager(object):
                 rdat.extend(d)
             datastream.write(struct.pack("".join(fmt), *rdat))
         datastream.write(BINCOPY_TRAILER)
-
-    def copystream(self, datastream):
-        columns = '", "'.join(self.cols)
-        cmd = 'COPY "{0}"."{1}" ("{2}") FROM STDIN WITH BINARY'
-        sql = cmd.format(self.schema, self.table, columns)
-        try:
-            self.backend.copystream(sql, datastream)
-        except Exception as e:
-            templ = "error doing binary copy into {0}.{1}:\n{2}"
-            e.message = templ.format(self.schema, self.table, e)
-            raise e
