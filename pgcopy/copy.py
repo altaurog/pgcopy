@@ -10,9 +10,7 @@ try:
 except ImportError:
     pass
 
-from psycopg2.extensions import encodings
-
-from . import errors, inspect, util
+from . import backend, errors, inspect, util
 from .thread import RaisingThread
 
 __all__ = ["CopyManager"]
@@ -254,7 +252,7 @@ class CopyManager(object):
             **type_formatters,
             **self.type_formatters,
         }
-        self.conn = conn
+        self.backend = backend.Psycopg2Backend(conn)
         if "." in table:
             self.schema, self.table = table.split(".", 1)
         else:
@@ -264,8 +262,8 @@ class CopyManager(object):
 
     def compile(self):
         self.formatters = []
-        type_dict = inspect.get_types(self.conn, self.schema, self.table)
-        encoding = encodings[self.conn.encoding]
+        type_dict = inspect.get_types(self.backend, self.schema, self.table)
+        encoding = self.backend.get_encoding()
         for column in self.cols:
             att = type_dict.get(column)
             if att is None:
@@ -350,9 +348,8 @@ class CopyManager(object):
         columns = '", "'.join(self.cols)
         cmd = 'COPY "{0}"."{1}" ("{2}") FROM STDIN WITH BINARY'
         sql = cmd.format(self.schema, self.table, columns)
-        cursor = self.conn.cursor()
         try:
-            cursor.copy_expert(sql, datastream)
+            self.backend.copystream(sql, datastream)
         except Exception as e:
             templ = "error doing binary copy into {0}.{1}:\n{2}"
             e.message = templ.format(self.schema, self.table, e)
