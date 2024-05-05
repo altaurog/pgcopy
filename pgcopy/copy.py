@@ -309,13 +309,7 @@ class CopyManager(object):
         ``ValueError`` is raised if a null value is provided for a column
         with non-null constraint.
         """
-        try:
-            with self.backend.copy(self.sql(), fobject_factory) as datastream:
-                self.writestream(data, datastream)
-        except Exception as e:
-            templ = "error doing binary copy into {0}.{1}:\n{2}"
-            e.message = templ.format(self.schema, self.table, e)
-            raise e
+        self._copy(data, self.backend.copy(self.sql(), fobject_factory))
 
     def threading_copy(self, data):
         """
@@ -324,8 +318,11 @@ class CopyManager(object):
         :param data: the data to be inserted
         :type data: iterable of iterables
         """
+        self._copy(data, self.backend.threading_copy(self.sql()))
+
+    def _copy(self, data, copy):
         try:
-            with self.backend.threading_copy(self.sql()) as datastream:
+            with copy as datastream:
                 self.writestream(data, datastream)
         except Exception as e:
             templ = "error doing binary copy into {0}.{1}:\n{2}"
