@@ -87,10 +87,15 @@ def drop_db():
 
 
 @pytest.fixture
-def conn(request, db):
+def client_encoding(request):
+    return getattr(request, "param", "UTF8")
+
+
+@pytest.fixture
+def conn(request, db, client_encoding):
     conn = connect()
     conn.autocommit = False
-    conn.set_client_encoding(getattr(request, "param", "UTF8"))
+    conn.set_client_encoding(client_encoding)
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         for extension in inst.extensions:

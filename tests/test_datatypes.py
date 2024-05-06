@@ -65,7 +65,9 @@ class TestEncoding(TypeMixin):
     datatypes = ["varchar(12)"]
     data = [("database",), ("מוסד נתונים",)]
 
-    @pytest.mark.parametrize("conn", ["UTF8", "ISO_8859_8", "WIN1255"], indirect=True)
+    @pytest.mark.parametrize(
+        "client_encoding", ["UTF8", "ISO_8859_8", "WIN1255"], indirect=True
+    )
     def test_type(self, conn, cursor, schema_table, data):
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, cursor)
         super(TestEncoding, self).test_type(conn, cursor, schema_table, data)
