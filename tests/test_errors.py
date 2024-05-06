@@ -1,3 +1,4 @@
+import pgcopy.errors
 import pytest
 from pgcopy import CopyManager
 
@@ -40,3 +41,13 @@ class TestDroppedCol(db.TemporaryTable):
         msg = '"{}" is not a column of table "{}"."{}"'
         with pytest.raises(ValueError, match=msg.format(col, schema, self.table)):
             CopyManager(conn, self.table, self.cols)
+
+
+def test_unsupported_connection():
+    message = "FakeConnection is not a supported connection type"
+    with pytest.raises(pgcopy.errors.UnsupportedConnectionError, match=message):
+        CopyManager(FakeConnection(), "fake_table", ["id", "name"])
+
+
+class FakeConnection:
+    encoding = "utf8"

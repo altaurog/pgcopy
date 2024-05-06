@@ -16,10 +16,6 @@ from pgcopy import CopyManager, util
 from . import db
 
 
-def test_connection_encoding(conn):
-    assert conn.encoding == "UTF8"
-
-
 def test_db_encoding(conn):
     assert conn.info.parameter_status("server_encoding") == "UTF8"
 
@@ -235,8 +231,7 @@ class TestBytea(TypeMixin):
     ]
 
     def cast(self, v):
-        assert isinstance(v, memoryview)
-        return bytes(v)
+        return bytes(v) if isinstance(v, memoryview) else v
 
 
 class TestTime(TypeMixin):
@@ -289,7 +284,7 @@ class TestUUID(TypeMixin):
     ]
 
     def cast(self, v):
-        return uuid.UUID(v)
+        return uuid.UUID(v) if isinstance(v, str) else v
 
 
 class TestEnum(TypeMixin):

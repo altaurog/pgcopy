@@ -1,8 +1,19 @@
 "psycopg backends"
+import contextlib
 import importlib
 import os
 
+from .errors import UnsupportedConnectionError
 from .thread import RaisingThread
+
+
+def for_connection(conn):
+    if hasattr(conn, "set_client_encoding") and hasattr(conn, "encoding"):
+        return Psycopg2Backend(conn)
+    if hasattr(conn, "execute"):
+        return Psycopg3Backend(conn)
+    message = f"{conn.__class__.__name__} is not a supported connection type"
+    raise UnsupportedConnectionError(message)
 
 
 class Psycopg2Backend:
@@ -42,8 +53,8 @@ class Psycopg2Copy:
         self.datastream.close()
 
     def copystream(self):
-        cursor = self.conn.cursor()
-        cursor.copy_expert(self.sql, self.datastream)
+        with self.conn.cursor() as cur:
+            cur.copy_expert(self.sql, self.datastream)
 
 
 class Psycopg2ThreadingCopy:
@@ -64,5 +75,30 @@ class Psycopg2ThreadingCopy:
         self.copy_thread.join()
 
     def copystream(self):
-        cursor = self.conn.cursor()
-        cursor.copy_expert(self.sql, self.rstream)
+        with self.conn.cursor() as cur:
+            cur.copy_expert(self.sql, self.rstream)
+
+
+class Psycopg3Backend:
+    def __init__(self, conn):
+        self.conn = conn
+        self.adaptor = importlib.import_module("psycopg")
+
+    def get_encoding(self):
+        return self.conn.info.encoding
+
+    def namedtuple_cursor(self):
+        factory = self.adaptor.rows.namedtuple_row
+        return self.conn.cursor(row_factory=factory)
+
+    @contextlib.contextmanager
+    def copy(self, sql, _):
+        with self.conn.cursor() as cur:
+            with cur.copy(sql) as copy:
+                yield copy
+
+    @contextlib.contextmanager
+    def threading_copy(self, sql):
+        with self.conn.cursor() as cur:
+            with cur.copy(sql) as copy:
+                yield copy

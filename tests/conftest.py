@@ -92,7 +92,7 @@ def client_encoding(request):
     return getattr(request, "param", "UTF8")
 
 
-@pytest.fixture(params=[adaptor.Psycopg2])
+@pytest.fixture(params=[adaptor.Psycopg2, adaptor.Psycopg3])
 def conn(request, db, client_encoding):
     psycopg2 = request.param(connection_params, client_encoding)
     conn = psycopg2.conn

@@ -9,3 +9,7 @@ if sys.version_info[0] == 2:
     from .py2 import raise_from
 else:
     from .py3 import raise_from
+
+
+class UnsupportedConnectionError(TypeError):
+    "connection type not supported"

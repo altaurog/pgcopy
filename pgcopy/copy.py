@@ -252,7 +252,7 @@ class CopyManager(object):
             **type_formatters,
             **self.type_formatters,
         }
-        self.backend = backend.Psycopg2Backend(conn)
+        self.backend = backend.for_connection(conn)
         if "." in table:
             self.schema, self.table = table.split(".", 1)
         else:
