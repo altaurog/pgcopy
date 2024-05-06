@@ -6,6 +6,7 @@ import psycopg2
 import pytest
 from psycopg2.extras import LoggingConnection
 
+from . import adaptor
 from .db import TemporaryTable
 
 
@@ -91,11 +92,10 @@ def client_encoding(request):
     return getattr(request, "param", "UTF8")
 
 
-@pytest.fixture
+@pytest.fixture(params=[adaptor.Psycopg2])
 def conn(request, db, client_encoding):
-    conn = connect()
-    conn.autocommit = False
-    conn.set_client_encoding(client_encoding)
+    psycopg2 = request.param(connection_params, client_encoding)
+    conn = psycopg2.conn
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         for extension in inst.extensions:

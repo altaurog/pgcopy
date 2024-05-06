@@ -1,6 +1,5 @@
 import pytest
 from pgcopy import CopyManager
-from psycopg2.errors import BadCopyFileFormat
 
 from . import test_datatypes
 
@@ -21,7 +20,7 @@ class TestThreadingCopy(test_datatypes.TypeMixin):
     def test_threading_copy_error(self, conn, cursor):
         data = [{}]
         mgr = CopyManager(conn, self.table, self.cols)
-        with pytest.raises(BadCopyFileFormat):
+        with pytest.raises(conn.DataError):
             mgr.threading_copy(data)
 
     def test_threading_copy_generator(self, conn, cursor, schema_table, data):

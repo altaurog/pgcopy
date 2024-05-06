@@ -11,7 +11,6 @@ import pytest
 if sys.version_info < (3,):
     memoryview = buffer
 
-import psycopg2.extensions
 from pgcopy import CopyManager, util
 
 from . import db
@@ -69,7 +68,6 @@ class TestEncoding(TypeMixin):
         "client_encoding", ["UTF8", "ISO_8859_8", "WIN1255"], indirect=True
     )
     def test_type(self, conn, cursor, schema_table, data):
-        psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, cursor)
         super(TestEncoding, self).test_type(conn, cursor, schema_table, data)
 
 
