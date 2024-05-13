@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import contextlib
 import decimal
 import json
 import sys
@@ -17,7 +18,7 @@ from . import db
 
 
 def test_db_encoding(conn):
-    with conn.cursor() as cur:
+    with contextlib.closing(conn.cursor()) as cur:
         cur.execute("SHOW server_encoding")
         res = cur.fetchone()
         assert res[0] == "UTF8"

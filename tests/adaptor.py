@@ -1,11 +1,13 @@
 import argparse
 import codecs
+import contextlib
 import importlib
+import os
 import sys
 
 
 def available_adaptors():
-    adaptors = [Psycopg2, Psycopg3, PyGreSQL]
+    adaptors = [Psycopg2, Psycopg3, PyGreSQL, Pg8000]
     return [a for a in adaptors if a.load()]
 
 
@@ -46,6 +48,7 @@ class Psycopg2(Adaptor):
         self.conn.autocommit = False
         self.conn.set_client_encoding(client_encoding)
         self.unsupported_type = self.m.psycopg2.errors.UndefinedObject
+        self.integrity_error = self.m.psycopg2.errors.IntegrityError
 
     @staticmethod
     def supports_encoding(encoding):
@@ -60,6 +63,7 @@ class Psycopg3(Adaptor):
         self.conn.autocommit = False
         self.conn.execute(f"SET client_encoding='{client_encoding}'")
         self.unsupported_type = self.m.psycopg.errors.UndefinedObject
+        self.integrity_error = self.m.psycopg.errors.IntegrityError
 
     @staticmethod
     def supports_encoding(encoding):
@@ -83,3 +87,44 @@ class PyGreSQL(Adaptor):
             return True
         except LookupError:
             return False
+
+
+class Pg8000(Adaptor):
+    module_names = ["pg8000.dbapi", "pg8000.exceptions"]
+
+    def __init__(self, connection_params, client_encoding):
+        params = self.get_connection_parameters(connection_params)
+        self.conn = self.m.dbapi.connect(**params)
+        self.conn.autocommit = False
+        with contextlib.closing(self.conn.cursor()) as cur:
+            cur.execute(f"SET client_encoding='{client_encoding}'")
+        self.unsupported_type = self.m.exceptions.DatabaseError
+        self.integrity_error = self.m.exceptions.DatabaseError
+
+    def get_connection_parameters(self, connection_params):
+        psycopg2 = importlib.import_module("psycopg2")
+        conn = psycopg2.connect(**connection_params)
+        parameters = {
+            "user": conn.info.user,
+            "database": conn.info.dbname,
+        }
+        host = conn.info.host
+        if host.startswith("/"):
+            sock = f"{host}/.s.PGSQL.{conn.info.port}"
+            if os.path.exists(sock):
+                parameters["unix_sock"] = sock
+                return parameters
+            parameters["host"] = "localhost"
+        else:
+            parameters["host"] = host
+        parameters["port"] = conn.info.port
+        parameters["password"] = conn.info.password
+        return parameters
+
+    @staticmethod
+    def supports_encoding(encoding):
+        return encoding.upper() == "UTF8"
+
+    @classmethod
+    def get_pgcode(cls, err):
+        return err.args[0]["C"]
