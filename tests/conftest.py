@@ -6,7 +6,7 @@ import psycopg2
 import pytest
 from psycopg2.extras import LoggingConnection
 
-from . import adaptor
+from .adaptor import available_adaptors
 from .db import TemporaryTable
 
 
@@ -92,10 +92,9 @@ def client_encoding(request):
     return getattr(request, "param", "UTF8")
 
 
-@pytest.fixture(params=[adaptor.Psycopg2, adaptor.Psycopg3])
-def conn(request, db, client_encoding):
-    psycopg2 = request.param(connection_params, client_encoding)
-    conn = psycopg2.conn
+@pytest.fixture
+def db_ext(request, db):
+    conn = connect()
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         for extension in inst.extensions:
@@ -109,12 +108,24 @@ def conn(request, db, client_encoding):
                 psycopg2.errors.FeatureNotSupported,  # postgres >= 15
             ):
                 conn.rollback()
+
+
+@pytest.fixture(params=available_adaptors())
+def conn(request, db_ext, client_encoding):
+    adaptor = request.param(connection_params, client_encoding)
+    conn = adaptor.conn
+    inst = request.instance
+    if isinstance(inst, TemporaryTable):
         try:
             with conn.cursor() as cur:
                 cur.execute(inst.create_sql(inst.tempschema))
-        except psycopg2.errors.UndefinedObject as e:
+        except adaptor.unsupported_type as e:
+            pgcode = adaptor.get_pgcode(e)
             conn.rollback()
-            pytest.skip("Unsupported datatype")
+            if pgcode == "42704":
+                pytest.skip("Unsupported datatype")
+            else:
+                raise
     yield conn
     conn.rollback()
     conn.close()
