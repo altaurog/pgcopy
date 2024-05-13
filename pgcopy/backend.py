@@ -8,9 +8,10 @@ from .thread import RaisingThread
 
 
 def for_connection(conn):
-    if hasattr(conn, "set_client_encoding") and hasattr(conn, "encoding"):
+    sources = [cls.__module__.split(".")[0] for cls in conn.__class__.mro()]
+    if "psycopg2" in sources:
         return Psycopg2Backend(conn)
-    if hasattr(conn, "execute"):
+    if "psycopg" in sources:
         return Psycopg3Backend(conn)
     message = f"{conn.__class__.__name__} is not a supported connection type"
     raise UnsupportedConnectionError(message)
