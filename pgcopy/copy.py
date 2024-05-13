@@ -253,6 +253,10 @@ class CopyManager(object):
             **self.type_formatters,
         }
         self.backend = backend.for_connection(conn)
+        self.implements_threading_copy = hasattr(self.backend, "threading_copy")
+        if not self.implements_threading_copy:
+            self.threading_copy = self.copy
+
         if "." in table:
             self.schema, self.table = table.split(".", 1)
         else:
@@ -309,7 +313,9 @@ class CopyManager(object):
         ``ValueError`` is raised if a null value is provided for a column
         with non-null constraint.
         """
-        self._copy(data, self.backend.copy(self.sql(), fobject_factory))
+        self._copy(
+            data, self.backend.copy(self.schema, self.table, self.cols, fobject_factory)
+        )
 
     def threading_copy(self, data):
         """
@@ -318,7 +324,9 @@ class CopyManager(object):
         :param data: the data to be inserted
         :type data: iterable of iterables
         """
-        self._copy(data, self.backend.threading_copy(self.sql()))
+        self._copy(
+            data, self.backend.threading_copy(self.schema, self.table, self.cols)
+        )
 
     def _copy(self, data, copy):
         try:
@@ -328,11 +336,6 @@ class CopyManager(object):
             templ = "error doing binary copy into {0}.{1}:\n{2}"
             e.message = templ.format(self.schema, self.table, e)
             raise e
-
-    def sql(self):
-        columns = '", "'.join(self.cols)
-        cmd = 'COPY "{0}"."{1}" ("{2}") FROM STDIN WITH BINARY'
-        return cmd.format(self.schema, self.table, columns)
 
     def writestream(self, data, datastream):
         datastream.write(BINCOPY_HEADER)

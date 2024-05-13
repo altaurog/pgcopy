@@ -17,7 +17,10 @@ from . import db
 
 
 def test_db_encoding(conn):
-    assert conn.info.parameter_status("server_encoding") == "UTF8"
+    with conn.cursor() as cur:
+        cur.execute("SHOW server_encoding")
+        res = cur.fetchone()
+        assert res[0] == "UTF8"
 
 
 class TypeMixin(db.TemporaryTable):

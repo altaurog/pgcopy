@@ -1,10 +1,11 @@
 import argparse
+import codecs
 import importlib
 import sys
 
 
 def available_adaptors():
-    adaptors = [Psycopg2, Psycopg3]
+    adaptors = [Psycopg2, Psycopg3, PyGreSQL]
     return [a for a in adaptors if a.load()]
 
 
@@ -46,6 +47,10 @@ class Psycopg2(Adaptor):
         self.conn.set_client_encoding(client_encoding)
         self.unsupported_type = self.m.psycopg2.errors.UndefinedObject
 
+    @staticmethod
+    def supports_encoding(encoding):
+        return True
+
 
 class Psycopg3(Adaptor):
     module_names = ["psycopg"]
@@ -55,3 +60,26 @@ class Psycopg3(Adaptor):
         self.conn.autocommit = False
         self.conn.execute(f"SET client_encoding='{client_encoding}'")
         self.unsupported_type = self.m.psycopg.errors.UndefinedObject
+
+    @staticmethod
+    def supports_encoding(encoding):
+        return True
+
+
+class PyGreSQL(Adaptor):
+    module_names = ["pgdb"]
+
+    def __init__(self, connection_params, client_encoding):
+        self.conn = self.m.pgdb.connect(**connection_params)
+        self.conn.autocommit = False
+        self.conn.execute(f"SET client_encoding='{client_encoding}'")
+        self.unsupported_type = self.conn.ProgrammingError
+        self.integrity_error = self.conn.IntegrityError
+
+    @staticmethod
+    def supports_encoding(encoding):
+        try:
+            codecs.lookup(encoding)
+            return True
+        except LookupError:
+            return False

@@ -112,6 +112,8 @@ def db_ext(request, db):
 
 @pytest.fixture(params=available_adaptors())
 def conn(request, db_ext, client_encoding):
+    if not request.param.supports_encoding(client_encoding):
+        pytest.skip("Unsupported encoding for {request.param}")
     adaptor = request.param(connection_params, client_encoding)
     conn = adaptor.conn
     inst = request.instance
