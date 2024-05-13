@@ -1,5 +1,6 @@
 "psycopg backends"
 import codecs
+import collections
 import contextlib
 import importlib
 import os
@@ -188,3 +189,66 @@ class PyGreSQLThreadingCopy:
                 format="binary",
                 columns=self.columns,
             )
+
+
+class Pg8000Backend:
+    NamedTupleCursor = None
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def get_encoding(self):
+        with contextlib.closing(self.namedtuple_cursor()) as cur:
+            cur.execute("SHOW client_encoding")
+            row = cur.fetchone()
+            return codecs.lookup(row.client_encoding).name
+
+    def namedtuple_cursor(self):
+        if not Pg8000Backend.NamedTupleCursor:
+            cur = self.conn.cursor()
+            Cursor = cur.__class__
+            cur.close()
+
+            class NamedTupleCursor(Cursor):
+                def __next__(self):
+                    val = super().__next__()
+                    context = self._context
+                    if context is None:
+                        return val  # raised an error already
+                    rowclass = getattr(context, "_pgcopy_row_class", None)
+                    if not rowclass:
+                        columns = context.columns
+                        if columns is None or len(columns) == 0:
+                            return val  # probably also raised an error
+                        column_names = [col["name"] for col in columns]
+                        rowclass = collections.namedtuple("Row", column_names)
+                        context._pgcopy_row_class = rowclass
+                    return rowclass(*val)
+
+            Pg8000Backend.NamedTupleCursor = NamedTupleCursor
+        return Pg8000Backend.NamedTupleCursor(self.conn)
+
+    def copy(self, schema, table, columns, fobject_factory):
+        sql = copy_sql(schema, table, columns)
+        return Pg8000Copy(self.conn, sql, fobject_factory)
+
+
+class Pg8000Copy:
+    def __init__(self, conn, sql, fobject_factory):
+        self.conn = conn
+        self.sql = sql
+        self.datastream = fobject_factory()
+
+    def __enter__(self):
+        return self.datastream
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            self.datastream.seek(0)
+            self.copystream()
+        self.datastream.close()
+
+    def copystream(self):
+        cur = self.conn.cursor()
+        cur.execute(self.sql, stream=self.datastream)
+        cur.close()

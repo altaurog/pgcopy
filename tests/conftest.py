@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import sys
@@ -111,7 +112,7 @@ def db_ext(request, db):
 
 
 @pytest.fixture(params=available_adaptors())
-def conn(request, db_ext, client_encoding):
+def adaptor(request, db_ext, client_encoding):
     if not request.param.supports_encoding(client_encoding):
         pytest.skip("Unsupported encoding for {request.param}")
     adaptor = request.param(connection_params, client_encoding)
@@ -119,7 +120,7 @@ def conn(request, db_ext, client_encoding):
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         try:
-            with conn.cursor() as cur:
+            with contextlib.closing(conn.cursor()) as cur:
                 cur.execute(inst.create_sql(inst.tempschema))
         except adaptor.unsupported_type as e:
             pgcode = adaptor.get_pgcode(e)
@@ -128,9 +129,19 @@ def conn(request, db_ext, client_encoding):
                 pytest.skip("Unsupported datatype")
             else:
                 raise
-    yield conn
+    yield adaptor
     conn.rollback()
     conn.close()
+
+
+@pytest.fixture
+def conn(adaptor):
+    return adaptor.conn
+
+
+@pytest.fixture
+def integrity_error(adaptor):
+    return adaptor.integrity_error
 
 
 @pytest.fixture

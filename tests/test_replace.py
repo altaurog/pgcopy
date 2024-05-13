@@ -6,6 +6,10 @@ from pgcopy import Replace, util
 from . import db
 
 
+def tuplist(iterable):
+    return [tuple(row) for row in iterable]
+
+
 class TestRenameReplace(db.TemporaryTable):
     datatypes = ["integer"]
     mixed_case = False
@@ -19,11 +23,11 @@ class TestRenameReplace(db.TemporaryTable):
         with util.RenameReplace(conn, self.table, xform) as temp:
             cursor.executemany(sql.format(temp), [(36,), (72,)])
         cursor.execute("SELECT * FROM {}".format(self.table))
-        assert list(cursor) == [(36,), (72,)]
+        assert tuplist(cursor) == [(36,), (72,)]
         cursor.execute("SELECT * FROM v")
-        assert list(cursor) == [(37,), (73,)]
+        assert tuplist(cursor) == [(37,), (73,)]
         cursor.execute("SELECT * FROM {}".format(self.table + "_old"))
-        assert list(cursor) == [(1,), (2,)]
+        assert tuplist(cursor) == [(1,), (2,)]
 
 
 class TestReplaceFallbackSchema(db.TemporaryTable):
@@ -39,7 +43,7 @@ class TestReplaceFallbackSchema(db.TemporaryTable):
         with Replace(conn, self.table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(1,)]
+        assert tuplist(cursor) == [(1,)]
 
 
 class TestReplaceDefault(db.TemporaryTable):
@@ -59,19 +63,23 @@ class TestReplaceDefault(db.TemporaryTable):
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(1, 3)]
+        assert tuplist(cursor) == [(1, 3)]
 
 
-@contextlib.contextmanager
-def replace_raises(conn, table):
-    """
-    Wrap Replace context manager and assert
-    exception is thrown on context exit
-    """
-    r = Replace(conn, table)
-    yield r.__enter__()
-    with pytest.raises(conn.IntegrityError):
-        r.__exit__(None, None, None)
+@pytest.fixture
+def replace_raises(conn, schema_table, integrity_error):
+    @contextlib.contextmanager
+    def _replace_raises():
+        """
+        Wrap Replace context manager and assert
+        exception is thrown on context exit
+        """
+        r = Replace(conn, schema_table)
+        yield r.__enter__()
+        with pytest.raises(integrity_error):
+            r.__exit__(None, None, None)
+
+    return _replace_raises
 
 
 class TestReplaceNotNull(db.TemporaryTable):
@@ -82,15 +90,15 @@ class TestReplaceNotNull(db.TemporaryTable):
         "integer NOT NULL",
     ]
 
-    def test_replace_not_null(self, conn, cursor, schema_table):
+    def test_replace_not_null(self, replace_raises, cursor):
         """
         Not-null constraint is added on exit
         """
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace_raises(conn, schema_table) as temp:
+        with replace_raises() as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute("SELECT * FROM {}".format(temp))
-            assert list(cursor) == [(1, None)]
+            assert tuplist(cursor) == [(1, None)]
 
 
 class TestReplaceConstraint(db.TemporaryTable):
@@ -100,12 +108,12 @@ class TestReplaceConstraint(db.TemporaryTable):
         "integer CHECK (a > 5)",
     ]
 
-    def test_replace_constraint(self, conn, cursor, schema_table):
+    def test_replace_constraint(self, replace_raises, cursor):
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace_raises(conn, schema_table) as temp:
+        with replace_raises() as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute("SELECT * FROM {}".format(temp))
-            assert list(cursor) == [(1,)]
+            assert tuplist(cursor) == [(1,)]
 
 
 class TestReplaceNamedConstraint(db.TemporaryTable):
@@ -129,16 +137,16 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
         "integer UNIQUE",
     ]
 
-    def test_replace_unique_index(self, conn, cursor, schema_table):
+    def test_replace_unique_index(self, replace_raises, cursor):
         """
         Not-null constraint is added on exit
         """
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace_raises(conn, schema_table) as temp:
+        with replace_raises() as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute(sql.format(temp), (1,))
             cursor.execute("SELECT * FROM {}".format(temp))
-            assert list(cursor) == [(1,), (1,)]
+            assert tuplist(cursor) == [(1,), (1,)]
 
 
 class TestReplaceView(db.TemporaryTable):
@@ -152,7 +160,7 @@ class TestReplaceView(db.TemporaryTable):
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM v")
-        assert list(cursor) == [(2,)]
+        assert tuplist(cursor) == [(2,)]
 
 
 class TestReplaceViewMultiSchema(db.TemporaryTable):
@@ -167,7 +175,7 @@ class TestReplaceViewMultiSchema(db.TemporaryTable):
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM ns.v")
-        assert list(cursor) == [(2,)]
+        assert tuplist(cursor) == [(2,)]
 
 
 class TestReplaceTrigger(db.TemporaryTable):
@@ -200,7 +208,7 @@ class TestReplaceTrigger(db.TemporaryTable):
             cursor.execute(sql.format(temp), (1, 1))
         cursor.execute(sql.format(schema_table), (2, 1))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(1, 1), (2, 8)]
+        assert tuplist(cursor) == [(1, 1), (2, 8)]
 
 
 class TestReplaceSequence(db.TemporaryTable):
@@ -219,4 +227,4 @@ class TestReplaceSequence(db.TemporaryTable):
             cursor.execute(sql.format(schema_table), (40,))
         cursor.execute(sql.format(schema_table), (40,))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(30, 3), (40, 5)]
+        assert tuplist(cursor) == [(30, 3), (40, 5)]
