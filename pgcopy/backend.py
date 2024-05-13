@@ -24,8 +24,7 @@ class Psycopg2Backend:
         self.adaptor.extras = importlib.import_module("psycopg2.extras")
 
     def get_encoding(self):
-        encodings = self.adaptor.extensions.encodings
-        return encodings[self.conn.encoding]
+        return self.adaptor.extensions.encodings[self.conn.encoding]
 
     def namedtuple_cursor(self):
         factory = self.adaptor.extras.NamedTupleCursor
