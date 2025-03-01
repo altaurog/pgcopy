@@ -140,7 +140,6 @@ def tsvector_formatter(vector):
         # Lexeme as null-terminated (so length + 1)
         # Number of positions (1 short)
         # For each position: value (n shorts)
-        lexeme = lexeme.encode()
         fmt.append('%ss%sH' % (len(lexeme) + 1, len(positions) + 1))
         data.extend([
             lexeme,
@@ -240,16 +239,23 @@ def maxsize(att, _, formatter):
 def encode(att, encoding, formatter):
     is_text_type = att.type_name in ("varchar", "text", "json")
     is_enum_type = att.type_category == "E"
-    if not (is_text_type or is_enum_type):
-        return formatter
-
-    def _encode(v):
-        try:
-            encf = v.encode
-        except AttributeError:
+    if att.type_name == "tsvector":
+        def _encode(v):
+            try:
+                v = [(lexeme.encode(encoding), position) for (lexeme, position) in v]
+            except AttributeError:
+                pass
             return formatter(v)
-        else:
-            return formatter(encf(encoding))
+    elif not (is_text_type or is_enum_type):
+        return formatter
+    else:
+        def _encode(v):
+            try:
+                encf = v.encode
+            except AttributeError:
+                return formatter(v)
+            else:
+                return formatter(encf(encoding))
 
     return _encode
 
