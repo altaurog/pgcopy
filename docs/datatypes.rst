@@ -29,7 +29,7 @@ timestamp with time zone   datetime.datetime
 numeric                    decimal.Decimal   Numeric_
 json                       str, bytes        Encoding_
 jsonb                      bytes
-uuid                       uuid.UUID
+uuid                       str, uuid.UUID
 vector_                    list[float]       Contrib_
 ========================== ================= =========================
 
