@@ -286,10 +286,14 @@ class TestUUID(TypeMixin):
     data = [
         (uuid.UUID("55daa192-a28a-4c49-ae84-ef3564e32308"),),
         (uuid.UUID("8b56420e-7e15-4bae-a76e-af20e35ea88f"),),
+        ("01959495-3659-7870-be82-0974b221a5ea",),
     ]
 
     def cast(self, v):
         return uuid.UUID(v)
+
+    def expected(self, rec):
+        return (self.cast(v) if isinstance(v, str) else v for v in rec)
 
 
 class TestEnum(TypeMixin):
