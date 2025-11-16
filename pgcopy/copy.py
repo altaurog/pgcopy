@@ -3,6 +3,7 @@ import functools
 import os
 import struct
 import tempfile
+import uuid
 from datetime import date, datetime
 
 try:
@@ -112,6 +113,8 @@ def jsonb_formatter(val):
 
 
 def uuid_formatter(guid):
+    if isinstance(guid, str):
+        guid = uuid.UUID(guid)
     return "i2Q", (16, (guid.int >> 64) & MAX_INT64, guid.int & MAX_INT64)
 
 

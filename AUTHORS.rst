@@ -10,3 +10,4 @@ with contributions from
 * Akshaye Shenoi `@akshayeshenoi <https://github.com/akshayeshenoi>`_
 * Nathan Glover `@nathanglover <https://github.com/nathanglover>`_
 * William Burklund `@wburklund <https://github.com/wburklund>`_
+* Logan Wang `@loganwang007 <https://github.com/loganwang007>`_
