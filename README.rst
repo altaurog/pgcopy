@@ -93,15 +93,9 @@ Documentation
 
 .. _Read the docs.: pgcopy_
 
-See Also
---------
-
-cpgcopy_, a Cython implementation, about twice as fast.
-
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 .. _psycopg2: https://pypi.org/project/psycopg2/
 .. _pytz: https://pypi.org/project/pytz/
 .. _pytest: https://pypi.org/project/pytest/
-.. _cpgcopy: https://github.com/altaurog/cpgcopy
 .. _Tox: https://tox.readthedocs.io/en/latest/
