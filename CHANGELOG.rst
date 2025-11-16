@@ -1,5 +1,11 @@
 Changelog
 -----------
+1.6.1
+"""""
+16 Nov, 2025
+
+* Add automatic uuid coercion from str (thanks Logan Wang)
+
 1.6.0
 """""
 8 Apr, 2024
