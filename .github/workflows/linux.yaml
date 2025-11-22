@@ -41,7 +41,7 @@ jobs:
       - name: install python deps
         run: pip3 install tox tox-docker
       - name: run tests
-        run: tox -e py310-pg${{ matrix.pg }}
+        run: tox -e py312-pg${{ matrix.pg }}
 
   contrib:
     name: Contrib
@@ -55,7 +55,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
       - name: install python deps
         run: pip3 install tox tox-docker
       - name: run tests
@@ -70,7 +70,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
       - name: install python deps
         run: pip3 install tox tox-docker
       - name: run tests
