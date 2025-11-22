@@ -12,7 +12,6 @@ jobs:
     strategy:
       matrix:
         pg:
-          - postgresql@12
           - postgresql@13
           - postgresql@14
           - postgresql@15
