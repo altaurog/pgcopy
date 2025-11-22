@@ -8,6 +8,8 @@ from psycopg2.extras import LoggingConnection
 
 from .db import TemporaryTable
 
+# pylint: disable=redefined-outer-name,consider-using-f-string
+
 
 def get_port():
     # this would be much more straightforward if tox-docker would release
@@ -71,8 +73,7 @@ def create_db():
                     + ".\nThe error is: %s" % exc
                 )
                 raise RuntimeError(message)
-            else:
-                return True
+            return True
 
 
 def drop_db():
