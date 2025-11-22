@@ -17,6 +17,8 @@ jobs:
           - postgresql@14
           - postgresql@15
           - postgresql@16
+          - postgresql@17
+          - postgresql@18
     runs-on: macos-14
     steps:
       - name: os info

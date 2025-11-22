@@ -16,7 +16,7 @@ database:
 
 
 For more thorough testing, tox_ with tox-docker_ will run tests on python
-versions 3.8 -- 3.12 and postgresql versions 12 -- 16::
+versions 3.8 -- 3.14 and postgresql versions 12 -- 18::
 
     $ tox
 
