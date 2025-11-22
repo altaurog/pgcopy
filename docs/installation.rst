@@ -19,8 +19,8 @@ approach is to create a psycopg2 wheel for distribution to production machines
 
 Compatibility
 """""""""""""
-pgcopy is tested with Python versions 3.8 -- 3.12 and
-PostgreSQL versions 12 -- 16
+pgcopy is tested with Python versions 3.9 -- 3.14 and
+PostgreSQL versions 13 -- 18
 
 .. note::
 

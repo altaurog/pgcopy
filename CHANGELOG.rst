@@ -1,5 +1,11 @@
 Changelog
 -----------
+1.6.2
+"""""
+22 Nov, 2025
+
+* Expand test version matrix up to Python 3.14 and Postgresql 18 (thanks Logan Wang)
+
 1.6.1
 """""
 16 Nov, 2025
