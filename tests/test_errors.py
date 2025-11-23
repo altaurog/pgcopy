@@ -1,7 +1,7 @@
 import pytest
 from pgcopy import CopyManager
 
-from . import db
+from . import db, db_connection
 
 
 class TestErrors(db.TemporaryTable):
@@ -21,6 +21,7 @@ class TestErrors(db.TemporaryTable):
 
 
 class TestFormatterDiagnostic(db.TemporaryTable):
+    id_col = False
     datatypes = ["varchar"]
 
     def test_formatting_diagnostic(self, conn):
@@ -30,6 +31,7 @@ class TestFormatterDiagnostic(db.TemporaryTable):
             copymgr.copy([[23]])
 
 
+@pytest.mark.skipif(db_connection.IS_DSQL, reason="drop column not supported on dsql")
 class TestDroppedCol(db.TemporaryTable):
     datatypes = ["integer", "integer"]
 

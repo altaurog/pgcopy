@@ -9,8 +9,8 @@ The test suite uses the following environment variables to connect to the
 database:
 
 * ``POSTGRES_DB`` (default ``pgcopy_test``)
-* ``POSTGRES_HOST`` (default ``5432``)
-* ``POSTGRES_PORT``
+* ``POSTGRES_HOST``
+* ``POSTGRES_PORT`` (default ``5432``)
 * ``POSTGRES_USER``
 * ``POSTGRES_PASSWORD``
 

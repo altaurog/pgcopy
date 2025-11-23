@@ -1,34 +1,13 @@
-import os
-import re
 import sys
 
 import psycopg2
 import pytest
 from psycopg2.extras import LoggingConnection
 
+from . import db_connection
 from .db import TemporaryTable
 
-# pylint: disable=redefined-outer-name,consider-using-f-string
-
-
-def get_port():
-    # this would be much more straightforward if tox-docker would release
-    # recent updates https://github.com/tox-dev/tox-docker/pull/167
-    if os.getenv("TOX_ENV_NAME"):
-        search_pattern = re.compile(r"PG\w+_5432_TCP_PORT")
-        for name, val in os.environ.items():
-            if search_pattern.fullmatch(name):
-                return int(val)
-    return int(os.getenv("POSTGRES_PORT", "5432"))
-
-
-connection_params = {
-    "dbname": os.getenv("POSTGRES_DB", "pgcopy_test"),
-    "port": get_port(),
-    "host": os.getenv("POSTGRES_HOST"),
-    "user": os.getenv("POSTGRES_USER"),
-    "password": os.getenv("POSTGRES_PASSWORD"),
-}
+connection_params = db_connection.get_connection_params()
 
 
 @pytest.fixture(scope="session")
@@ -89,11 +68,29 @@ def drop_db():
 
 @pytest.fixture
 def conn(request, db):
-    conn = connect()
-    conn.autocommit = False
-    conn.set_client_encoding(getattr(request, "param", "UTF8"))
     inst = request.instance
     if isinstance(inst, TemporaryTable):
+        if db_connection.IS_DSQL:
+            yield from dsql_table(request, inst)
+        else:
+            yield from temporary_table(request, inst)
+    else:
+        yield from no_table(request)
+
+
+def dsql_table(request, inst):
+    for conn in temporary_table(request, inst):
+        conn.commit()
+        yield conn
+        conn.commit()
+        if drop_sql := inst.drop_sql():
+            with conn.cursor() as cur:
+                cur.execute(drop_sql)
+            conn.commit()
+
+
+def temporary_table(request, inst):
+    for conn in no_table(request):
         for extension in inst.extensions:
             try:
                 with conn.cursor() as cur:
@@ -108,9 +105,19 @@ def conn(request, db):
         try:
             with conn.cursor() as cur:
                 cur.execute(inst.create_sql(inst.tempschema))
-        except psycopg2.errors.UndefinedObject as e:
+        except (
+            psycopg2.errors.FeatureNotSupported,
+            psycopg2.errors.UndefinedObject,
+        ) as e:
             conn.rollback()
             pytest.skip("Unsupported datatype")
+        yield conn
+
+
+def no_table(request):
+    conn = connect()
+    conn.autocommit = False
+    conn.set_client_encoding(getattr(request, "param", "UTF8"))
     yield conn
     conn.rollback()
     conn.close()
@@ -150,4 +157,4 @@ def schema_table(request, schema):
 def data(request):
     inst = request.instance
     if isinstance(inst, TemporaryTable):
-        return inst.data or inst.generate_data(inst.record_count)
+        return inst.generate_data()

@@ -4,10 +4,15 @@ import psycopg2
 import pytest
 from pgcopy import Replace, util
 
-from . import db
+from . import db, db_connection
 
 
-class TestRenameReplace(db.TemporaryTable):
+@pytest.mark.skipif(db_connection.IS_DSQL, reason="tests not supported on dsql")
+class TemporaryTable(db.TemporaryTable):
+    id_col = False
+
+
+class TestRenameReplace(TemporaryTable):
     datatypes = ["integer"]
     mixed_case = False
 
@@ -27,7 +32,7 @@ class TestRenameReplace(db.TemporaryTable):
         assert list(cursor) == [(1,), (2,)]
 
 
-class TestReplaceFallbackSchema(db.TemporaryTable):
+class TestReplaceFallbackSchema(TemporaryTable):
     datatypes = ["integer"]
     mixed_case = False
 
@@ -45,7 +50,7 @@ class TestReplaceFallbackSchema(db.TemporaryTable):
         assert list(cursor) == [(1,)]
 
 
-class TestReplaceDefault(db.TemporaryTable):
+class TestReplaceDefault(TemporaryTable):
     """
     Defaults are set on temp table immediately.
     """
@@ -77,7 +82,7 @@ def replace_raises(conn, table, exc=psycopg2.IntegrityError):
         r.__exit__(None, None, None)
 
 
-class TestReplaceNotNull(db.TemporaryTable):
+class TestReplaceNotNull(TemporaryTable):
     mixed_case = False
     null = ""
     datatypes = [
@@ -96,7 +101,7 @@ class TestReplaceNotNull(db.TemporaryTable):
             assert list(cursor) == [(1, None)]
 
 
-class TestReplaceConstraint(db.TemporaryTable):
+class TestReplaceConstraint(TemporaryTable):
     mixed_case = False
     null = ""
     datatypes = [
@@ -111,7 +116,7 @@ class TestReplaceConstraint(db.TemporaryTable):
             assert list(cursor) == [(1,)]
 
 
-class TestReplaceNamedConstraint(db.TemporaryTable):
+class TestReplaceNamedConstraint(TemporaryTable):
     mixed_case = False
     null = ""
     datatypes = [
@@ -125,7 +130,7 @@ class TestReplaceNamedConstraint(db.TemporaryTable):
             pass
 
 
-class TestReplaceUniqueIndex(db.TemporaryTable):
+class TestReplaceUniqueIndex(TemporaryTable):
     mixed_case = False
     null = ""
     datatypes = [
@@ -144,7 +149,7 @@ class TestReplaceUniqueIndex(db.TemporaryTable):
             assert list(cursor) == [(1,), (1,)]
 
 
-class TestReplaceView(db.TemporaryTable):
+class TestReplaceView(TemporaryTable):
     mixed_case = False
     datatypes = ["integer"]
 
@@ -158,7 +163,7 @@ class TestReplaceView(db.TemporaryTable):
         assert list(cursor) == [(2,)]
 
 
-class TestReplaceViewMultiSchema(db.TemporaryTable):
+class TestReplaceViewMultiSchema(TemporaryTable):
     mixed_case = False
     tempschema = False
     datatypes = ["integer"]
@@ -173,7 +178,7 @@ class TestReplaceViewMultiSchema(db.TemporaryTable):
         assert list(cursor) == [(2,)]
 
 
-class TestReplaceTrigger(db.TemporaryTable):
+class TestReplaceTrigger(TemporaryTable):
     mixed_case = False
     null = ""
     datatypes = [
@@ -206,7 +211,7 @@ class TestReplaceTrigger(db.TemporaryTable):
         assert list(cursor) == [(1, 1), (2, 8)]
 
 
-class TestReplaceSequence(db.TemporaryTable):
+class TestReplaceSequence(TemporaryTable):
     mixed_case = False
     null = ""
     datatypes = [
