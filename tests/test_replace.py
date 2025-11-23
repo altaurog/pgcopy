@@ -37,6 +37,8 @@ class TestReplaceFallbackSchema(db.TemporaryTable):
     def test_fallback_schema_honors_search_path(
         self, conn, cursor, schema, schema_table
     ):
+        if not db.TemporaryTable.tempschema:
+            pytest.skip("This test currently requires temp schema")
         cursor.execute(self.create_sql(tempschema=False))
         cursor.execute("SET search_path TO {}".format(schema))
         sql = 'INSERT INTO {} ("a") VALUES (%s)'

@@ -1,8 +1,11 @@
 import hashlib
+import os
 from datetime import date, datetime, time, timedelta
 from random import randint
 
 from pgcopy import util
+
+NO_TEMPORARY_TABLES = bool(os.getenv("NO_TEMPORARY_TABLES"))
 
 genbool = lambda i: 0 == (i % 3)
 genint = lambda i: i
@@ -32,7 +35,7 @@ datagen = {
 
 
 class TemporaryTable(object):
-    tempschema = True
+    tempschema = not NO_TEMPORARY_TABLES
     null = "NOT NULL"
     data = None
     extensions = []
