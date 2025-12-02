@@ -1,5 +1,11 @@
 Changelog
 -----------
+1.6.3
+"""""
+2 Dec, 2025
+
+* Test compatible features on Aurora DSQL
+
 1.6.2
 """""
 22 Nov, 2025
