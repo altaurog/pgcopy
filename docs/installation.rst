@@ -20,7 +20,8 @@ approach is to create a psycopg2 wheel for distribution to production machines
 Compatibility
 """""""""""""
 pgcopy is tested with Python versions 3.9 -- 3.14 and
-PostgreSQL versions 13 -- 18
+PostgreSQL versions 13 -- 18, as well as `Aurora DSQL`_
+(note DSQL does not support all pgcopy features).
 
 .. note::
 
@@ -31,3 +32,4 @@ PostgreSQL versions 13 -- 18
 .. _pytz: https://pypi.org/project/pytz/
 .. _pytest: https://pypi.org/project/pytest/
 .. _psycopg2 versions 2.8 and later: https://www.psycopg.org/docs/install#change-in-binary-packages-between-psycopg-2-7-and-2-8
+.. _Aurora DSQL: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/what-is-aurora-dsql.html

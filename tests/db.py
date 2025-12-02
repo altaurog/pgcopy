@@ -1,8 +1,15 @@
 import hashlib
+import os
 from datetime import date, datetime, time, timedelta
 from random import randint
 
 from pgcopy import util
+
+from . import db_connection
+
+# pylint: disable=consider-using-f-string
+
+NO_TEMPORARY_TABLES = bool(os.getenv("NO_TEMPORARY_TABLES")) or db_connection.IS_DSQL
 
 genbool = lambda i: 0 == (i % 3)
 genint = lambda i: i
@@ -32,12 +39,17 @@ datagen = {
 
 
 class TemporaryTable(object):
-    tempschema = True
+    tempschema = not NO_TEMPORARY_TABLES
+    id_col = True
     null = "NOT NULL"
     data = None
+    datatypes: list
     extensions = []
     record_count = 0
     mixed_case = True
+    table: str
+    cols: list
+    select_list: str
 
     def colname(self, i):
         char = chr(ord("a") + i)
@@ -49,17 +61,28 @@ class TemporaryTable(object):
         self.table = self.__class__.__name__
         if not self.mixed_case:
             self.table = self.__class__.__name__.lower()
-        self.cols = [self.colname(i) for i in range(len(self.datatypes))]
-        self.select_list = ','.join('"{}"'.format(c) for c in self.cols)
+        id_cols = ["id"] if self.id_col else []
+        self.cols = id_cols + [self.colname(i) for i in range(len(self.datatypes))]
+        self.select_list = ",".join('"{}"'.format(c) for c in self.cols)
 
     def create_sql(self, tempschema=None):
         col_ids = ['"{}"'.format(c) for c in self.cols]
-        colsql = [(c, t, self.null) for c, t in zip(col_ids, self.datatypes)]
+        id_types = ["integer"] if self.id_col else []
+        colsql = [(c, t, self.null) for c, t in zip(col_ids, id_types + self.datatypes)]
         collist = ", ".join(map(" ".join, colsql))
         if tempschema:
             return 'CREATE TEMPORARY TABLE "{}" ({})'.format(self.table, collist)
         return 'CREATE TABLE "public"."{}" ({})'.format(self.table, collist)
 
-    def generate_data(self, count):
-        gen = [datagen[t] for t in self.datatypes]
-        return [tuple(g(i) for g in gen) for i in range(count)]
+    def generate_data(self):
+        if self.data:
+            return [(i, *row) for i, row in enumerate(self.data)]
+        id_types = ["integer"] if self.id_col else []
+        datatypes = id_types + self.datatypes
+        gen = [datagen[t] for t in datatypes]
+        return [tuple(g(i) for g in gen) for i in range(self.record_count)]
+
+    def drop_sql(self, tempschema=None):
+        if tempschema:
+            return
+        return 'DROP TABLE "public"."{}"'.format(self.table)
