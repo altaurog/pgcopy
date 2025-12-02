@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
 
       - name: install python deps
-        run: pip3 install psycopg2 pytz pytest
+        run: pip3 install boto3 psycopg2 pytz pytest
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
