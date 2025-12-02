@@ -25,6 +25,9 @@ than the ubiquitous docker::
 
     $ docker-compose up pgcopy
 
+The pgcopy test suite can also be run against AWS Aurora DSQL.  For this,
+only ``POSTGRES_HOST`` need be set to the dsql endpoint.
+
 .. note::
 
     Tests for extension types will be skipped if the required db extension is not
