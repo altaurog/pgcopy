@@ -1,34 +1,15 @@
 import contextlib
-import os
-import re
 import sys
 
 import psycopg2
 import pytest
 from psycopg2.extras import LoggingConnection
 
+from . import db_connection
 from .adaptor import available_adaptors
 from .db import TemporaryTable
 
-
-def get_port():
-    # this would be much more straightforward if tox-docker would release
-    # recent updates https://github.com/tox-dev/tox-docker/pull/167
-    if os.getenv("TOX_ENV_NAME"):
-        search_pattern = re.compile(r"PG\w+_5432_TCP_PORT")
-        for name, val in os.environ.items():
-            if search_pattern.fullmatch(name):
-                return int(val)
-    return int(os.getenv("POSTGRES_PORT", "5432"))
-
-
-connection_params = {
-    "dbname": os.getenv("POSTGRES_DB", "pgcopy_test"),
-    "port": get_port(),
-    "host": os.getenv("POSTGRES_HOST"),
-    "user": os.getenv("POSTGRES_USER"),
-    "password": os.getenv("POSTGRES_PASSWORD"),
-}
+connection_params = db_connection.get_connection_params()
 
 
 @pytest.fixture(scope="session")
@@ -73,8 +54,7 @@ def create_db():
                     + ".\nThe error is: %s" % exc
                 )
                 raise RuntimeError(message)
-            else:
-                return True
+            return True
 
 
 def drop_db():
@@ -98,9 +78,30 @@ def adaptor(request, db, client_encoding):
     if not request.param.supports_encoding(client_encoding):
         pytest.skip("Unsupported encoding for {request.param}")
     adaptor = request.param(connection_params, client_encoding)
-    conn = adaptor.conn
     inst = request.instance
     if isinstance(inst, TemporaryTable):
+        if db_connection.IS_DSQL:
+            yield from dsql_table(adaptor, inst)
+        else:
+            yield from temporary_table(adaptor, inst)
+    else:
+        yield from no_table(adaptor)
+
+
+def dsql_table(adaptor, inst):
+    for adaptor in temporary_table(adaptor, inst):
+        conn = adaptor.conn
+        conn.commit()
+        yield conn
+        conn.commit()
+        if drop_sql := inst.drop_sql():
+            with contextlib.closing(conn.cursor()) as cur:
+                cur.execute(drop_sql)
+            conn.commit()
+
+
+def temporary_table(adaptor, inst):
+    for adaptor in no_table(adaptor):
         # use psycopg2 connection to create extensions if necessary
         psycopg2_conn = connect()
         for extension in inst.extensions:
@@ -116,6 +117,7 @@ def adaptor(request, db, client_encoding):
                 psycopg2_conn.rollback()
         psycopg2_conn.close()
 
+        conn = adaptor.conn
         try:
             with contextlib.closing(conn.cursor()) as cur:
                 cur.execute(inst.create_sql(inst.tempschema))
@@ -126,6 +128,11 @@ def adaptor(request, db, client_encoding):
                 pytest.skip("Unsupported datatype")
             else:
                 raise
+        yield adaptor
+
+
+def no_table(adaptor):
+    conn = adaptor.conn
     yield adaptor
     conn.rollback()
     conn.close()
@@ -175,4 +182,4 @@ def schema_table(request, schema):
 def data(request):
     inst = request.instance
     if isinstance(inst, TemporaryTable):
-        return inst.data or inst.generate_data(inst.record_count)
+        return inst.generate_data()

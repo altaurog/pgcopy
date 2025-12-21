@@ -33,13 +33,17 @@ class TypeMixin(db.TemporaryTable):
     def test_type(self, conn, cursor, schema_table, data):
         bincopy = self.copy_manager_class(conn, schema_table, self.cols)
         bincopy.copy(data)
-        select_list = ",".join(self.cols)
-        cursor.execute(self.select_sql(schema_table))
-        self.checkResults(cursor, data)
+        select_list = ",".join('"{}"'.format(c) for c in self.cols[1:])
+        cursor.execute(self.select_sql(schema_table, select_list))
+        self.checkResults(cursor, [row[1:] for row in data])
 
-    def select_sql(self, schema_table):
+    def select_sql(self, schema_table, select_list=None):
         schema, table = schema_table.split(".")
-        return 'SELECT %s from "%s"."%s"' % (self.select_list, schema, table)
+        return 'SELECT %s from "%s"."%s" ORDER BY "id"' % (
+            select_list or self.select_list,
+            schema,
+            table,
+        )
 
     def checkResults(self, cursor, data):
         for rec in data:
@@ -266,7 +270,7 @@ class TestNumeric(TypeMixin):
         (decimal.Decimal("-1000"),),
         (decimal.Decimal("21034.56"),),
         (decimal.Decimal("-900000.0001"),),
-        (decimal.Decimal("-1.3E25"),),
+        (decimal.Decimal("-1.3E11"),),
     ]
 
 

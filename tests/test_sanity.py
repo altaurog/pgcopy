@@ -7,6 +7,7 @@ from . import db
 
 
 class TestSanity(db.TemporaryTable):
+    id_col = False
     manager = CopyManager
     method = "copy"
     record_count = 3
