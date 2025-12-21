@@ -93,32 +93,29 @@ def client_encoding(request):
     return getattr(request, "param", "UTF8")
 
 
-@pytest.fixture
-def db_ext(request, db):
-    conn = connect()
-    inst = request.instance
-    if isinstance(inst, TemporaryTable):
-        for extension in inst.extensions:
-            try:
-                with conn.cursor() as cur:
-                    cur.execute("CREATE EXTENSION {}".format(extension))
-                conn.commit()
-            except (
-                psycopg2.errors.DuplicateObject,
-                psycopg2.errors.UndefinedFile,  # postgres <= 14
-                psycopg2.errors.FeatureNotSupported,  # postgres >= 15
-            ):
-                conn.rollback()
-
-
 @pytest.fixture(params=available_adaptors())
-def adaptor(request, db_ext, client_encoding):
+def adaptor(request, db, client_encoding):
     if not request.param.supports_encoding(client_encoding):
         pytest.skip("Unsupported encoding for {request.param}")
     adaptor = request.param(connection_params, client_encoding)
     conn = adaptor.conn
     inst = request.instance
     if isinstance(inst, TemporaryTable):
+        # use psycopg2 connection to create extensions if necessary
+        psycopg2_conn = connect()
+        for extension in inst.extensions:
+            try:
+                with psycopg2_conn.cursor() as cur:
+                    cur.execute("CREATE EXTENSION {}".format(extension))
+                psycopg2_conn.commit()
+            except (
+                psycopg2.errors.DuplicateObject,
+                psycopg2.errors.UndefinedFile,  # postgres <= 14
+                psycopg2.errors.FeatureNotSupported,  # postgres >= 15
+            ):
+                psycopg2_conn.rollback()
+        psycopg2_conn.close()
+
         try:
             with contextlib.closing(conn.cursor()) as cur:
                 cur.execute(inst.create_sql(inst.tempschema))
