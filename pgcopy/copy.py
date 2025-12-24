@@ -11,9 +11,7 @@ try:
 except ImportError:
     pass
 
-from psycopg2.extensions import encodings
-
-from . import errors, inspect, util
+from . import backend, errors, inspect, util
 from .thread import RaisingThread
 
 __all__ = ["CopyManager"]
@@ -238,8 +236,14 @@ class CopyManager(object):
 
     Inspects the database on instantiation for the column types.
 
+    supported adaptors:
+
+    * psycopg2
+    * psycopg
+    * pg8000
+    * PyGreSQL
+
     :param conn: a database connection
-    :type conn: psycopg2 connection
 
     :param table: the table name.  Schema may be specified using dot notation: ``schema.table``.
     :type table: str
@@ -257,7 +261,11 @@ class CopyManager(object):
             **type_formatters,
             **self.type_formatters,
         }
-        self.conn = conn
+        self.backend = backend.for_connection(conn)
+        self.implements_threading_copy = hasattr(self.backend, "threading_copy")
+        if not self.implements_threading_copy:
+            self.threading_copy = self.copy
+
         if "." in table:
             self.schema, self.table = table.split(".", 1)
         else:
@@ -267,8 +275,8 @@ class CopyManager(object):
 
     def compile(self):
         self.formatters = []
-        type_dict = inspect.get_types(self.conn, self.schema, self.table)
-        encoding = encodings[self.conn.encoding]
+        type_dict = inspect.get_types(self.backend, self.schema, self.table)
+        encoding = self.backend.get_encoding()
         for column in self.cols:
             att = type_dict.get(column)
             if att is None:
@@ -314,11 +322,9 @@ class CopyManager(object):
         ``ValueError`` is raised if a null value is provided for a column
         with non-null constraint.
         """
-        datastream = fobject_factory()
-        self.writestream(data, datastream)
-        datastream.seek(0)
-        self.copystream(datastream)
-        datastream.close()
+        self._copy(
+            data, self.backend.copy(self.schema, self.table, self.cols, fobject_factory)
+        )
 
     def threading_copy(self, data):
         """
@@ -327,14 +333,18 @@ class CopyManager(object):
         :param data: the data to be inserted
         :type data: iterable of iterables
         """
-        r_fd, w_fd = os.pipe()
-        rstream = os.fdopen(r_fd, "rb")
-        wstream = os.fdopen(w_fd, "wb")
-        copy_thread = RaisingThread(target=self.copystream, args=(rstream,))
-        copy_thread.start()
-        self.writestream(data, wstream)
-        wstream.close()
-        copy_thread.join()
+        self._copy(
+            data, self.backend.threading_copy(self.schema, self.table, self.cols)
+        )
+
+    def _copy(self, data, copy):
+        try:
+            with copy as datastream:
+                self.writestream(data, datastream)
+        except Exception as e:
+            templ = "error doing binary copy into {0}.{1}:\n{2}"
+            e.message = templ.format(self.schema, self.table, e)
+            raise e
 
     def writestream(self, data, datastream):
         datastream.write(BINCOPY_HEADER)
@@ -348,15 +358,3 @@ class CopyManager(object):
                 rdat.extend(d)
             datastream.write(struct.pack("".join(fmt), *rdat))
         datastream.write(BINCOPY_TRAILER)
-
-    def copystream(self, datastream):
-        columns = '", "'.join(self.cols)
-        cmd = 'COPY "{0}"."{1}" ("{2}") FROM STDIN WITH BINARY'
-        sql = cmd.format(self.schema, self.table, columns)
-        cursor = self.conn.cursor()
-        try:
-            cursor.copy_expert(sql, datastream)
-        except Exception as e:
-            templ = "error doing binary copy into {0}.{1}:\n{2}"
-            e.message = templ.format(self.schema, self.table, e)
-            raise e

@@ -1,15 +1,17 @@
 import contextlib
 
-import psycopg2
 import pytest
 from pgcopy import Replace, util
 
 from . import db, db_connection
 
-
 @pytest.mark.skipif(db_connection.IS_DSQL, reason="tests not supported on dsql")
 class TemporaryTable(db.TemporaryTable):
     id_col = False
+
+
+def tuplist(iterable):
+    return [tuple(row) for row in iterable]
 
 
 class TestRenameReplace(TemporaryTable):
@@ -25,11 +27,11 @@ class TestRenameReplace(TemporaryTable):
         with util.RenameReplace(conn, self.table, xform) as temp:
             cursor.executemany(sql.format(temp), [(36,), (72,)])
         cursor.execute("SELECT * FROM {}".format(self.table))
-        assert list(cursor) == [(36,), (72,)]
+        assert tuplist(cursor) == [(36,), (72,)]
         cursor.execute("SELECT * FROM v")
-        assert list(cursor) == [(37,), (73,)]
+        assert tuplist(cursor) == [(37,), (73,)]
         cursor.execute("SELECT * FROM {}".format(self.table + "_old"))
-        assert list(cursor) == [(1,), (2,)]
+        assert tuplist(cursor) == [(1,), (2,)]
 
 
 class TestReplaceFallbackSchema(TemporaryTable):
@@ -47,7 +49,7 @@ class TestReplaceFallbackSchema(TemporaryTable):
         with Replace(conn, self.table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(1,)]
+        assert tuplist(cursor) == [(1,)]
 
 
 class TestReplaceDefault(TemporaryTable):
@@ -67,20 +69,23 @@ class TestReplaceDefault(TemporaryTable):
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(1, 3)]
+        assert tuplist(cursor) == [(1, 3)]
 
 
-@contextlib.contextmanager
-def replace_raises(conn, table, exc=psycopg2.IntegrityError):
-    """
-    Wrap Replace context manager and assert
-    exception is thrown on context exit
-    """
-    r = Replace(conn, table)
-    yield r.__enter__()
-    with pytest.raises(exc):
-        r.__exit__(None, None, None)
+@pytest.fixture
+def replace_raises(conn, schema_table, integrity_error):
+    @contextlib.contextmanager
+    def _replace_raises():
+        """
+        Wrap Replace context manager and assert
+        exception is thrown on context exit
+        """
+        r = Replace(conn, schema_table)
+        yield r.__enter__()
+        with pytest.raises(integrity_error):
+            r.__exit__(None, None, None)
 
+    return _replace_raises
 
 class TestReplaceNotNull(TemporaryTable):
     mixed_case = False
@@ -90,15 +95,15 @@ class TestReplaceNotNull(TemporaryTable):
         "integer NOT NULL",
     ]
 
-    def test_replace_not_null(self, conn, cursor, schema_table):
+    def test_replace_not_null(self, replace_raises, cursor):
         """
         Not-null constraint is added on exit
         """
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace_raises(conn, schema_table) as temp:
+        with replace_raises() as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute("SELECT * FROM {}".format(temp))
-            assert list(cursor) == [(1, None)]
+            assert tuplist(cursor) == [(1, None)]
 
 
 class TestReplaceConstraint(TemporaryTable):
@@ -108,12 +113,12 @@ class TestReplaceConstraint(TemporaryTable):
         "integer CHECK (a > 5)",
     ]
 
-    def test_replace_constraint(self, conn, cursor, schema_table):
+    def test_replace_constraint(self, replace_raises, cursor):
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace_raises(conn, schema_table) as temp:
+        with replace_raises() as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute("SELECT * FROM {}".format(temp))
-            assert list(cursor) == [(1,)]
+            assert tuplist(cursor) == [(1,)]
 
 
 class TestReplaceNamedConstraint(TemporaryTable):
@@ -137,16 +142,16 @@ class TestReplaceUniqueIndex(TemporaryTable):
         "integer UNIQUE",
     ]
 
-    def test_replace_unique_index(self, conn, cursor, schema_table):
+    def test_replace_unique_index(self, replace_raises, cursor):
         """
         Not-null constraint is added on exit
         """
         sql = 'INSERT INTO {} ("a") VALUES (%s)'
-        with replace_raises(conn, schema_table) as temp:
+        with replace_raises() as temp:
             cursor.execute(sql.format(temp), (1,))
             cursor.execute(sql.format(temp), (1,))
             cursor.execute("SELECT * FROM {}".format(temp))
-            assert list(cursor) == [(1,), (1,)]
+            assert tuplist(cursor) == [(1,), (1,)]
 
 
 class TestReplaceView(TemporaryTable):
@@ -160,7 +165,7 @@ class TestReplaceView(TemporaryTable):
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM v")
-        assert list(cursor) == [(2,)]
+        assert tuplist(cursor) == [(2,)]
 
 
 class TestReplaceViewMultiSchema(TemporaryTable):
@@ -175,7 +180,7 @@ class TestReplaceViewMultiSchema(TemporaryTable):
         with Replace(conn, schema_table) as temp:
             cursor.execute(sql.format(temp), (1,))
         cursor.execute("SELECT * FROM ns.v")
-        assert list(cursor) == [(2,)]
+        assert tuplist(cursor) == [(2,)]
 
 
 class TestReplaceTrigger(TemporaryTable):
@@ -208,7 +213,7 @@ class TestReplaceTrigger(TemporaryTable):
             cursor.execute(sql.format(temp), (1, 1))
         cursor.execute(sql.format(schema_table), (2, 1))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(1, 1), (2, 8)]
+        assert tuplist(cursor) == [(1, 1), (2, 8)]
 
 
 class TestReplaceSequence(TemporaryTable):
@@ -227,4 +232,4 @@ class TestReplaceSequence(TemporaryTable):
             cursor.execute(sql.format(schema_table), (40,))
         cursor.execute(sql.format(schema_table), (40,))
         cursor.execute("SELECT * FROM {}".format(schema_table))
-        assert list(cursor) == [(30, 3), (40, 5)]
+        assert tuplist(cursor) == [(30, 3), (40, 5)]

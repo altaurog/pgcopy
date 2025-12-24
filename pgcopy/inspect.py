@@ -1,7 +1,7 @@
-from psycopg2.extras import NamedTupleCursor
+"inspect column types"
 
 
-def get_types(conn, schema, table):
+def get_types(backend, schema, table):
     # for arrays:
     # typname has '_' prefix
     # attndims > 0
@@ -24,6 +24,6 @@ def get_types(conn, schema, table):
             WHERE n.nspname = %s and relname = %s and attnum > 0
             ORDER BY c.relname, a.attnum;
             """
-    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+    cursor = backend.namedtuple_cursor()
     cursor.execute(query, (schema, table))
     return {r.attname: r for r in cursor}

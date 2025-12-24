@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import contextlib
 import decimal
 import json
 import sys
@@ -8,21 +9,21 @@ import uuid
 
 import pytest
 
+# pylint: disable=consider-using-f-string
+
 if sys.version_info < (3,):
     memoryview = buffer
 
-import psycopg2.extensions
 from pgcopy import CopyManager, util
 
 from . import db
 
 
-def test_connection_encoding(conn):
-    assert conn.encoding == "UTF8"
-
-
 def test_db_encoding(conn):
-    assert conn.info.parameter_status("server_encoding") == "UTF8"
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute("SHOW server_encoding")
+        res = cur.fetchone()
+        assert res[0] == "UTF8"
 
 
 class TypeMixin(db.TemporaryTable):
@@ -69,9 +70,10 @@ class TestEncoding(TypeMixin):
     datatypes = ["varchar(12)"]
     data = [("database",), ("מוסד נתונים",)]
 
-    @pytest.mark.parametrize("conn", ["UTF8", "ISO_8859_8", "WIN1255"], indirect=True)
+    @pytest.mark.parametrize(
+        "client_encoding", ["UTF8", "ISO_8859_8", "WIN1255"], indirect=True
+    )
     def test_type(self, conn, cursor, schema_table, data):
-        psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, cursor)
         super(TestEncoding, self).test_type(conn, cursor, schema_table, data)
 
 
@@ -240,8 +242,7 @@ class TestBytea(TypeMixin):
     ]
 
     def cast(self, v):
-        assert isinstance(v, memoryview)
-        return bytes(v)
+        return bytes(v) if isinstance(v, memoryview) else v
 
 
 class TestTime(TypeMixin):
@@ -295,7 +296,7 @@ class TestUUID(TypeMixin):
     ]
 
     def cast(self, v):
-        return uuid.UUID(v)
+        return uuid.UUID(v) if isinstance(v, str) else v
 
     def expected(self, rec):
         return (self.cast(v) if isinstance(v, str) else v for v in rec)

@@ -1,4 +1,4 @@
-FROM python:3.10-slim-buster
+FROM python:3.14-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -7,13 +7,13 @@ RUN \
     apt-get install -y --no-install-recommends \
         gcc \
         libpq-dev \
-        netcat \
+        netcat-traditional \
         python3 \
         python3-dev \
         python3-pip \
         python3-setuptools
 
-RUN pip3 install pytest==8.1.1
+RUN pip3 install pytest psycopg
 COPY ./ /opt/install
 WORKDIR /opt/install
 RUN pip3 install .

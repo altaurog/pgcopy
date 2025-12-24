@@ -37,7 +37,7 @@ setup(
     license="MIT",
     url="https://pgcopy.readthedocs.io/en/latest/",
     packages=["pgcopy", "pgcopy.errors", "pgcopy.contrib"],
-    install_requires=["psycopg2", "pytz"],
+    install_requires=["pytz"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
