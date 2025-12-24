@@ -49,7 +49,10 @@ class Psycopg2(Adaptor):
         self.conn.initialize(sys.stderr)
         self.conn.autocommit = False
         self.conn.set_client_encoding(client_encoding)
-        self.unsupported_type = self.m.psycopg2.errors.UndefinedObject
+        self.unsupported_type = (
+            self.m.psycopg2.errors.UndefinedObject,
+            self.m.psycopg2.errors.FeatureNotSupported,
+        )
         self.integrity_error = self.m.psycopg2.errors.IntegrityError
 
     @staticmethod
@@ -64,7 +67,10 @@ class Psycopg3(Adaptor):
         self.conn = self.m.psycopg.connect(**connection_params)
         self.conn.autocommit = False
         self.conn.execute(f"SET client_encoding='{client_encoding}'")
-        self.unsupported_type = self.m.psycopg.errors.UndefinedObject
+        self.unsupported_type = (
+            self.m.psycopg.errors.UndefinedObject,
+            self.m.psycopg.errors.FeatureNotSupported,
+        )
         self.integrity_error = self.m.psycopg.errors.IntegrityError
 
     @staticmethod
@@ -79,7 +85,10 @@ class PyGreSQL(Adaptor):
         self.conn = self.m.pgdb.connect(**connection_params)
         self.conn.autocommit = False
         self.conn.execute(f"SET client_encoding='{client_encoding}'")
-        self.unsupported_type = self.conn.ProgrammingError
+        self.unsupported_type = (
+            self.conn.ProgrammingError,
+            self.conn.NotSupportedError,
+        )
         self.integrity_error = self.conn.IntegrityError
 
     @staticmethod

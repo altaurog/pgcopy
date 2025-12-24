@@ -41,7 +41,7 @@ def dsql_table(adaptor, inst):
     for adaptor in temporary_table(adaptor, inst):
         conn = adaptor.conn
         conn.commit()
-        yield conn
+        yield adaptor
         conn.commit()
         if drop_sql := inst.drop_sql():
             with contextlib.closing(conn.cursor()) as cur:
@@ -61,7 +61,7 @@ def temporary_table(adaptor, inst):
         except adaptor.unsupported_type as e:
             pgcode = adaptor.get_pgcode(e)
             conn.rollback()
-            if pgcode == "42704":
+            if pgcode in ("42704", "0A000"):
                 pytest.skip("Unsupported datatype")
             else:
                 raise
