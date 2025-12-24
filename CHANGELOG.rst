@@ -1,5 +1,12 @@
 Changelog
 -----------
+2.0a1
+"""""
+24 Dec, 2025
+
+* Refactor to allow support for different db adaptors
+* Add support for psycopg, pg8000, and PyGreSQL db adaptors
+
 1.6.3
 """""
 2 Dec, 2025

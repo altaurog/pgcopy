@@ -22,7 +22,7 @@ copyright = "2025, Aryeh Leib Taurog"
 author = "Aryeh Leib Taurog"
 
 # The full version, including alpha/beta/rc tags
-release = "1.6.3"
+release = "2.0a1"
 master_doc = "index"
 
 # -- General configuration ---------------------------------------------------
