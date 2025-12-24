@@ -1,9 +1,6 @@
 import contextlib
-import sys
 
-import psycopg2
 import pytest
-from psycopg2.extras import LoggingConnection
 
 from . import db_connection
 from .adaptor import available_adaptors
@@ -11,63 +8,13 @@ from .db import TemporaryTable
 
 # pylint: disable=redefined-outer-name,consider-using-f-string
 
-connection_params = db_connection.get_connection_params()
-
 
 @pytest.fixture(scope="session")
 def db():
-    drop = create_db()
+    drop = db_connection.create_db()
     yield
     if drop:
-        try:
-            drop_db()
-        except psycopg2.OperationalError:
-            pass
-
-
-def connect(**kwargs):
-    kw = connection_params.copy()
-    kw.update(kwargs)
-    conn = psycopg2.connect(connection_factory=LoggingConnection, **kw)
-    conn.initialize(sys.stderr)
-    return conn
-
-
-def create_db():
-    "connect to test db"
-    try:
-        connect().close()
-        return False
-    except psycopg2.OperationalError as exc:
-        dbname = connection_params["dbname"]
-        nosuch_db = 'database "%s" does not exist' % dbname
-        if nosuch_db in str(exc):
-            try:
-                master = connect(dbname="postgres")
-                master.rollback()
-                master.autocommit = True
-                cursor = master.cursor()
-                cursor.execute("CREATE DATABASE %s" % dbname)
-                cursor.close()
-                master.close()
-            except psycopg2.Error as exc:
-                message = (
-                    "Unable to connect to or create test db %s.\nThe error is: %s"
-                    % (dbname, exc)
-                )
-                raise RuntimeError(message)
-            return True
-
-
-def drop_db():
-    "Drop test db"
-    master = connect(dbname="postgres")
-    master.rollback()
-    master.autocommit = True
-    cursor = master.cursor()
-    cursor.execute("DROP DATABASE %s" % connection_params["dbname"])
-    cursor.close()
-    master.close()
+        db_connection.drop_db()
 
 
 @pytest.fixture
@@ -79,7 +26,7 @@ def client_encoding(request):
 def adaptor(request, db, client_encoding):
     if not request.param.supports_encoding(client_encoding):
         pytest.skip("Unsupported encoding for {request.param}")
-    adaptor = request.param(connection_params, client_encoding)
+    adaptor = request.param(db_connection.connection_params, client_encoding)
     inst = request.instance
     if isinstance(inst, TemporaryTable):
         if db_connection.IS_DSQL:
@@ -104,20 +51,8 @@ def dsql_table(adaptor, inst):
 
 def temporary_table(adaptor, inst):
     for adaptor in no_table(adaptor):
-        # use psycopg2 connection to create extensions if necessary
-        psycopg2_conn = connect()
-        for extension in inst.extensions:
-            try:
-                with psycopg2_conn.cursor() as cur:
-                    cur.execute("CREATE EXTENSION {}".format(extension))
-                psycopg2_conn.commit()
-            except (
-                psycopg2.errors.DuplicateObject,
-                psycopg2.errors.UndefinedFile,  # postgres <= 14
-                psycopg2.errors.FeatureNotSupported,  # postgres >= 15
-            ):
-                psycopg2_conn.rollback()
-        psycopg2_conn.close()
+        if inst.extensions:
+            db_connection.create_extensions(inst.extensions)
 
         conn = adaptor.conn
         try:

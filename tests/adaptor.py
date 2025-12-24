@@ -5,6 +5,8 @@ import importlib
 import os
 import sys
 
+from . import db_connection
+
 
 def available_adaptors():
     adaptors = [Psycopg2, Psycopg3, PyGreSQL, Pg8000]
@@ -102,24 +104,23 @@ class Pg8000(Adaptor):
         self.integrity_error = self.m.exceptions.DatabaseError
 
     def get_connection_parameters(self, connection_params):
-        psycopg2 = importlib.import_module("psycopg2")
-        conn = psycopg2.connect(**connection_params)
-        parameters = {
-            "user": conn.info.user,
-            "database": conn.info.dbname,
-        }
-        host = conn.info.host
-        if host.startswith("/"):
-            sock = f"{host}/.s.PGSQL.{conn.info.port}"
-            if os.path.exists(sock):
-                parameters["unix_sock"] = sock
-                return parameters
-            parameters["host"] = "localhost"
-        else:
-            parameters["host"] = host
-        parameters["port"] = conn.info.port
-        parameters["password"] = conn.info.password
-        return parameters
+        with db_connection.conninfo(connection_params) as conninfo:
+            parameters = {
+                "user": conninfo.user,
+                "database": conninfo.dbname,
+            }
+            host = conninfo.host
+            if host.startswith("/"):
+                sock = f"{host}/.s.PGSQL.{conninfo.port}"
+                if os.path.exists(sock):
+                    parameters["unix_sock"] = sock
+                    return parameters
+                parameters["host"] = "localhost"
+            else:
+                parameters["host"] = host
+            parameters["port"] = conninfo.port
+            parameters["password"] = conninfo.password
+            return parameters
 
     @staticmethod
     def supports_encoding(encoding):
