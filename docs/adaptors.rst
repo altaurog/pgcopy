@@ -6,7 +6,7 @@ The db adaptor is automatically detected when a connection is passed to
 :py:class:`pgcopy.CopyManager`.
 
 =============== =================
-DB Adaptor      Notes
+Adaptor         Notes
 =============== =================
 psycopg2_       All features are supported
 psycopg_        :any:`threading_copy` is the same as :any:`copy`.
