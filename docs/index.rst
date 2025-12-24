@@ -9,6 +9,7 @@
    installation
    use
    datatypes
+   adaptors
    extending
    replace
    benchmarks

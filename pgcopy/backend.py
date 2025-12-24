@@ -1,4 +1,5 @@
 "psycopg backends"
+
 import codecs
 import collections
 import contextlib
@@ -164,6 +165,8 @@ class PyGreSQLCopy:
 
 
 class PyGreSQLThreadingCopy:
+    "but it doesn’t work"
+
     def __init__(self, conn, schema, table, columns):
         self.conn = conn
         self.table = f"{schema}.{table}"
