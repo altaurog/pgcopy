@@ -37,21 +37,21 @@ def create_db():
         connect().close()
         return False
     except psycopg2.OperationalError as exc:
-        nosuch_db = 'database "%s" does not exist' % connection_params["dbname"]
+        dbname = connection_params["dbname"]
+        nosuch_db = 'database "%s" does not exist' % dbname
         if nosuch_db in str(exc):
             try:
                 master = connect(dbname="postgres")
                 master.rollback()
                 master.autocommit = True
                 cursor = master.cursor()
-                cursor.execute("CREATE DATABASE %s" % connection_params["dbname"])
+                cursor.execute("CREATE DATABASE %s" % dbname)
                 cursor.close()
                 master.close()
             except psycopg2.Error as exc:
                 message = (
-                    "Unable to connect to or create test db "
-                    + connection_params["dbname"]
-                    + ".\nThe error is: %s" % exc
+                    "Unable to connect to or create test db %s.\nThe error is: %s"
+                    % (dbname, exc)
                 )
                 raise RuntimeError(message)
             return True
