@@ -9,6 +9,8 @@ import uuid
 
 import pytest
 
+# pylint: disable=consider-using-f-string
+
 if sys.version_info < (3,):
     memoryview = buffer
 

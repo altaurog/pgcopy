@@ -9,6 +9,8 @@ from . import db_connection
 from .adaptor import available_adaptors
 from .db import TemporaryTable
 
+# pylint: disable=redefined-outer-name,consider-using-f-string
+
 connection_params = db_connection.get_connection_params()
 
 
