@@ -1,5 +1,5 @@
 """
-for Python 2
+for Python 3
 """
 
 

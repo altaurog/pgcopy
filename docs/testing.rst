@@ -9,14 +9,14 @@ The test suite uses the following environment variables to connect to the
 database:
 
 * ``POSTGRES_DB`` (default ``pgcopy_test``)
-* ``POSTGRES_HOST`` (default ``5432``)
-* ``POSTGRES_PORT``
+* ``POSTGRES_HOST``
+* ``POSTGRES_PORT`` (default ``5432``)
 * ``POSTGRES_USER``
 * ``POSTGRES_PASSWORD``
 
 
 For more thorough testing, tox_ with tox-docker_ will run tests on python
-versions 3.8 -- 3.12 and postgresql versions 12 -- 16::
+versions 3.9 -- 3.14 and postgresql versions 13 -- 18::
 
     $ tox
 
@@ -24,6 +24,9 @@ Additionally, the test suite can be run with no local requirements other
 than the ubiquitous docker::
 
     $ docker-compose up pgcopy
+
+The pgcopy test suite can also be run against AWS Aurora DSQL.  For this,
+boto3 must be installed and ``POSTGRES_HOST`` set to the dsql endpoint.
 
 .. note::
 

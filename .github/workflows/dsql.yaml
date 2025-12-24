@@ -1,0 +1,39 @@
+name: DSQL
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  dsql-test:
+    name: Test on DSQL
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: dsql
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install python deps
+        run: pip3 install boto3 psycopg2 pytz pytest
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: run tests
+        run: pytest tests/
+        env:
+          POSTGRES_HOST: ${{ secrets.DSQL_HOST }}
+

@@ -1,5 +1,23 @@
 Changelog
 -----------
+1.6.3
+"""""
+2 Dec, 2025
+
+* Test compatible features on Aurora DSQL
+
+1.6.2
+"""""
+22 Nov, 2025
+
+* Expand test version matrix up to Python 3.14 and Postgresql 18 (thanks Logan Wang)
+
+1.6.1
+"""""
+16 Nov, 2025
+
+* Add automatic uuid coercion from str (thanks Logan Wang)
+
 1.6.0
 """""
 8 Apr, 2024
