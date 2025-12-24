@@ -236,8 +236,14 @@ class CopyManager(object):
 
     Inspects the database on instantiation for the column types.
 
+    supported adaptors:
+
+    * psycopg2
+    * psycopg
+    * pg8000
+    * PyGreSQL
+
     :param conn: a database connection
-    :type conn: psycopg2 connection
 
     :param table: the table name.  Schema may be specified using dot notation: ``schema.table``.
     :type table: str

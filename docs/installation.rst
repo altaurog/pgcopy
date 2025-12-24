@@ -7,15 +7,14 @@ To install::
 
 Dependencies
 """"""""""""
-pgcopy requires pytz_ and the psycopg2_ db adapter.
-pytest_ is required to run the tests.
+pgcopy requires Python3, pytz_, and a db adaptor.  The supported adaptors are:
 
-Due to technical problems with binary distributions, `psycopg2 versions
-2.8 and later`_ have separate packages for binary install.  This complicates
-installation in some situations, as it requires the dev tools to build psycopg2.
+* psycopg2_
+* psycopg_
+* pg8000_
+* PyGreSQL_
 
-If you do not want to build psycopg2 for each installation, the recommended
-approach is to create a psycopg2 wheel for distribution to production machines
+pytest_ and one of psycopg2_ or psycopg_ is required to run the tests.
 
 Compatibility
 """""""""""""
@@ -29,7 +28,9 @@ PostgreSQL versions 13 -- 18, as well as `Aurora DSQL`_
     Please upgrade to Python 3.
 
 .. _psycopg2: https://pypi.org/project/psycopg2/
+.. _psycopg: https://pypi.org/project/psycopg/
+.. _pg8000: https://pypi.org/project/pg8000/
+.. _PyGreSQL: https://pypi.org/project/PyGreSQL/
 .. _pytz: https://pypi.org/project/pytz/
 .. _pytest: https://pypi.org/project/pytest/
-.. _psycopg2 versions 2.8 and later: https://www.psycopg.org/docs/install#change-in-binary-packages-between-psycopg-2-7-and-2-8
 .. _Aurora DSQL: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/what-is-aurora-dsql.html

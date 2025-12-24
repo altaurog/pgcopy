@@ -26,6 +26,7 @@ PostgreSQL with `binary copy`_.
 
 Features
 ---------
+* Support for multiple db adaptors
 * Support for many data types
 * Support for multi-dimensional array types
 * Support for schema and schema search path
@@ -42,7 +43,7 @@ Quickstart
 
     from datetime import datetime
     from pgcopy import CopyManager
-    import psycopg2
+    import psycopg
     cols = ('id', 'timestamp', 'location', 'temperature')
     now = datetime.now()
     records = [
@@ -50,7 +51,7 @@ Quickstart
             (1, now, 'New York', 75.6),
             (2, now, 'Moscow', 54.3),
         ]
-    conn = psycopg2.connect(database='weather_db')
+    conn = psycopg.connect(database='weather_db')
     mgr = CopyManager(conn, 'measurements_table', cols)
     mgr.copy(records)
 
@@ -58,6 +59,14 @@ Quickstart
     conn.commit()
 
 .. home-end
+
+Supported Adaptors
+-------------------
+
+* psycopg2_
+* psycopg_
+* pg8000_
+* PyGreSQL_
 
 Supported datatypes
 -------------------
@@ -96,6 +105,10 @@ Documentation
 
 .. _binary copy: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 .. _psycopg2: https://pypi.org/project/psycopg2/
+.. _psycopg: https://pypi.org/project/psycopg/
+.. _pg8000: https://pypi.org/project/pg8000/
+.. _PyGreSQL: https://pypi.org/project/PyGreSQL/
+
 .. _pytz: https://pypi.org/project/pytz/
 .. _pytest: https://pypi.org/project/pytest/
 .. _Tox: https://tox.readthedocs.io/en/latest/

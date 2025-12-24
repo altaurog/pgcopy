@@ -15,6 +15,9 @@ database:
 * ``POSTGRES_PASSWORD``
 
 
+One of psycopg2_ or psycopg_ is required to run the tests.  The test suite
+will automatically discover all supported db adaptors.
+
 For more thorough testing, tox_ with tox-docker_ will run tests on python
 versions 3.9 -- 3.14 and postgresql versions 13 -- 18::
 
@@ -37,3 +40,5 @@ boto3 must be installed and ``POSTGRES_HOST`` set to the dsql endpoint.
 .. _pytest: https://pypi.org/project/pytest/
 .. _tox: https://tox.wiki
 .. _tox-docker: https://tox-docker.readthedocs.io
+.. _psycopg2: https://pypi.org/project/psycopg2/
+.. _psycopg: https://pypi.org/project/psycopg/
