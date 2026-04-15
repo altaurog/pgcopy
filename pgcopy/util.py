@@ -166,7 +166,7 @@ class Replace(object):
         conquery = """
             SELECT DISTINCT contype, conname, pg_catalog.pg_get_constraintdef(oid)
             FROM pg_catalog.pg_constraint
-            WHERE conrelid = %s::regclass AND contype != 'u'
+            WHERE conrelid = %s::regclass AND contype NOT IN ('u', 'n')
             """
         self.cursor.execute(conquery, (self.nameformat(self.table),))
         self.constraints = self.cursor.fetchall()
